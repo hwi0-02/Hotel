@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+  <!-- 모든 우선순위의 버그를 포함 (High, Medium, Low) -->
+  <Match>
+    <Bug pattern=".*" />
+  </Match>
+</FindBugsFilter>

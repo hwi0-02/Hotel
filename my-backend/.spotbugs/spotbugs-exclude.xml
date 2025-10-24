@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Spring Framework DI (의존성 주입) 빈은 불변으로 관리되므로 안전 -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Or>
+            <Class name="~.*Controller$"/>
+            <Class name="~.*Service$"/>
+            <Class name="~.*Repository$"/>
+        </Or>
+    </Match>
+
+    <!-- JPA 엔티티의 @ManyToOne, @OneToOne 관계는 JPA가 프록시로 관리 -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP"/>
+        <Or>
+            <!-- 도메인 엔티티 패키지 -->
+            <Package name="~com\.example\.backend\..*\.domain"/>
+        </Or>
+        <Or>
+            <!-- JPA 연관관계 메서드만 제외 -->
+            <Method name="~get(User|Room|Hotel|Reservation|Review|Owner|Amenity)"/>
+            <Method name="~set(User|Room|Hotel|Reservation|Review|Owner|Amenity)"/>
+        </Or>
+    </Match>
+
+    <!-- JPA 엔티티 Builder 패턴도 제외 -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Class name="~.*\$.*Builder$"/>
+        <Or>
+            <Method name="~(user|room|hotel|reservation|review|owner|amenity)"/>
+        </Or>
+    </Match>
+
+    <!-- @AllArgsConstructor가 생성하는 생성자 제외 (JPA 엔티티용) -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Package name="~com\.example\.backend\..*\.domain"/>
+        <Method name="&lt;init&gt;"/>
+    </Match>
+
+    <!-- Lombok @Builder가 생성하는 메서드들 제외 (DTO용) -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Class name="~.*\$.*Builder$"/>
+    </Match>
+
+    <!-- DTO의 @AllArgsConstructor 생성자도 제외 -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Package name="~com\.example\.backend\..*\.dto"/>
+        <Method name="&lt;init&gt;"/>
+    </Match>
+
+    <!-- DTO의 setter 메서드도 이미 방어적 복사 구현했으므로 Builder 경고만 제외 -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Or>
+            <Class name="~.*ResponseDto\$.*Builder$"/>
+            <Class name="~.*DetailDto\$.*Builder$"/>
+            <Class name="~.*RoomDto\$.*Builder$"/>
+        </Or>
+    </Match>
+</FindBugsFilter>

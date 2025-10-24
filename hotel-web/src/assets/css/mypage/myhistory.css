@@ -1,0 +1,131 @@
+/* 예약 내역 공용 변수가 없을 경우를 대비해 안전하게 변수 재선언 */
+:root { 
+  --line: #e5e7eb;
+  --ink: #111827;
+  --ink-light: #6b7280;
+  --brand-primary: #1d4ed8;
+  --bg-white: #fff;
+}
+
+.loading, .no-data {
+  text-align: center;
+  padding: 40px;
+  color: var(--ink-light);
+}
+
+.reservation-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  background-color: var(--bg-white);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+  transition: all 0.3s ease;
+}
+.reservation-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.reservation-card.active { border-color: var(--brand-primary); }
+
+.reservation-card .summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hotel-info { 
+  display: flex; 
+  flex-direction: column; 
+  max-width: 65%;
+}
+.hotel-name { font-size: 18px; font-weight: 700; color: var(--ink); }
+.dates { font-size: 14px; color: var(--ink-light); margin-top: 4px; }
+
+.summary-right { 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  min-width: 180px;
+  justify-content: flex-end;
+}
+
+.status-badge {
+  display: inline-block;
+  min-width: 60px;
+  text-align: center;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+.status-badge.CONFIRMED { background-color: #1d4ed8; }
+.status-badge.COMPLETED { background-color: #10b981; }
+.status-badge.CANCELLED { background-color: #dc3545; }
+.status-badge.HOLD { background-color: #f59e0b; }
+.status-badge.PENDING { background-color: #ffc107; color: #111827; }
+
+.arrow-icon { font-size: 16px; transition: transform 0.3s ease; }
+.reservation-card.active .arrow-icon { transform: rotate(180deg); }
+
+.btn-detail {
+  background-color: transparent;
+  color: var(--brand-primary);
+  border: 1px solid var(--brand-primary);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.btn-detail:hover {
+  background-color: var(--brand-primary);
+  color: #fff;
+}
+
+.reservation-card .details {
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.4s ease-in-out;
+  padding: 0 4px; 
+  border-top: 1px solid transparent;
+}
+.reservation-card.active .details {
+  max-height: 500px;
+  border-top: 1px solid var(--line);
+  padding: 0 4px 16px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  padding: 20px;
+}
+.detail-item .label {
+  display: block;
+  font-size: 13px;
+  color: var(--ink-light);
+  margin-bottom: 4px;
+}
+.detail-item .value {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* 프로필 사진 크기 통일(독립 페이지일 때도 동일) */
+.profile-img,
+.image img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--line);
+  cursor: pointer;
+}

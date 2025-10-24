@@ -1,0 +1,448 @@
+/* src/assets/css/support/customer_service.css */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
+/* ---------------- 페이지 전체 레이아웃 및 기본 스타일 ---------------- */
+.customer-service-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    font-family: 'Montserrat', sans-serif;
+    background-color: #FAFBFC;
+}
+
+.service-container {
+    flex-grow: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* ---------------- 페이지 제목 ---------------- */
+.page-title-section {
+    margin-bottom: 40px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #EAEAEA;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #121211;
+    margin-bottom: 4px;
+}
+
+.page-subtitle {
+    font-size: 16px;
+    color: #555;
+}
+
+/* ---------------- 공통 섹션 스타일 ---------------- */
+.service-section {
+    margin-bottom: 60px;
+}
+
+.section-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #121211;
+    text-align: left;
+}
+
+/* ---------------- 문의 유형 선택 섹션 스타일 ---------------- */
+.category-selector-section {
+    margin-bottom: 60px;
+}
+
+.category-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.category-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    padding: 25px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+}
+
+.category-card.active {
+    border-color: #4ec89f;
+    box-shadow: 0 4px 15px rgba(78, 200, 159, 0.2);
+}
+
+.category-card h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #121211;
+    margin-bottom: 8px;
+}
+
+.category-card p {
+    font-size: 14px;
+    color: #555;
+}
+
+/* ---------------- FAQ 스타일 (카드 디자인 적용) ---------------- */
+.faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.faq-item {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.faq-question {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 18px 20px;
+    text-align: left;
+    font-size: 16px;
+    font-weight: 600;
+    color: #121211;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.faq-question:hover {
+    color: #4ec89f;
+}
+
+.faq-answer {
+    padding: 0 20px 18px;
+    color: #555;
+    line-height: 1.6;
+    font-size: 14px;
+    border-top: 1px solid #f0f0f0;
+}
+
+/* ---------------- 문의하기 버튼 영역 스타일 ---------------- */
+.inquiry-action-area {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #EAEAEA;
+}
+
+
+/* ---------------- 1:1 문의 폼 스타일 ---------------- */
+.inquiry-form, .inquiry-history {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    padding: 25px;
+    border: none;
+    flex-grow: 1; 
+}
+.form-group {
+    margin-bottom: 15px;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+}
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'Montserrat', sans-serif;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background-color: #fff;
+    -webkit-appearance: none;
+    appearance: none;
+}
+.form-group select {
+    /* SVG 기반 드롭다운 화살표 유지 */
+    background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%23333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #4ec89f;
+    box-shadow: 0 0 0 3px rgba(78, 200, 159, 0.2);
+}
+
+/* ---------------- 메인 컬러를 사용한 버튼 스타일 ---------------- */
+.submit-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #4ec89f;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.submit-btn:hover {
+    background-color: #41b38f;
+}
+.submit-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+.submit-btn:disabled:hover {
+    background-color: #cccccc;
+}
+
+/* ---------------- 로그인 안내 스타일 ---------------- */
+.login-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: 100%;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    padding: 40px 25px;
+    border: none;
+}
+
+/* ---------------- 콘텐츠 영역 애니메이션 ---------------- */
+.content-area {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------------- 모달 및 내부 스타일 ---------------- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 10px;
+    width: 95%;
+    max-width: 550px;
+    padding: 30px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    
+    /* 🔥🔥 핵심: 모달 높이 제한 및 내부 스크롤 허용 (세로 짤림 방지) 🔥🔥 */
+    max-height: 85vh; 
+    overflow-y: auto; 
+    
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+}
+
+.full-width-btn {
+    width: 100%;
+    margin-top: 15px;
+    height: 45px;
+    font-size: 16px;
+}
+
+/* ---------------- 모달 내부의 나의 문의 내역 섹션 ---------------- */
+.modal-inquiry-history {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px dashed #ddd;
+}
+.modal-inquiry-history h4 {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #555;
+}
+
+/* 롤링 가능한 가로 리스트 컨테이너 */
+.inquiry-list.horizontal-list {
+    /* 🔥🔥🔥 핵심: 컨테이너에 flex 속성 재강화 및 스크롤 설정 🔥🔥🔥 */
+    display: flex !important; 
+    flex-direction: row !important;
+    overflow-x: auto; /* 가로 스크롤 가능하게 */
+    gap: 15px;
+    padding: 5px 0;
+    
+    -ms-overflow-style: none; /* 스크롤바 숨김 */
+    scrollbar-width: none;
+    
+    border: none;
+    box-shadow: none;
+    background: none;
+}
+.inquiry-list.horizontal-list::-webkit-scrollbar {
+    display: none;
+}
+
+/* 🔥🔥 개별 문의 아이템 (문의 카드를 명함처럼 가로로 배치) 🔥🔥 */
+.inquiry-list.horizontal-list .inquiry-item {
+    /* 🔥🔥🔥 핵심: 가로 배열과 크기 고정 🔥🔥🔥 */
+    display: flex !important; 
+    flex-direction: row !important; 
+    
+    min-width: 300px; /* 카드의 최소 너비 지정 */
+    flex-shrink: 0; /* 줄어들지 않도록 강제 */
+    
+    align-items: center; /* 세로 중앙 정렬 */
+    padding: 15px;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+    background-color: #fcfcfc;
+    
+    justify-content: space-between; /* 요소들을 좌우로 분리 */
+    gap: 10px; 
+    
+    white-space: nowrap; 
+    overflow: hidden;
+}
+
+/* 🔥🔥 내부 요소 개별 스타일 (가로 배열에 맞게) 🔥🔥 */
+.inquiry-list.horizontal-list .inquiry-item .inquiry-status {
+    order: 1; 
+    flex-shrink: 0; 
+}
+.inquiry-list.horizontal-list .inquiry-item .inquiry-title {
+    order: 2;
+    flex-grow: 1; /* 제목이 남은 공간을 차지하도록 */
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis; 
+    font-weight: 700;
+    
+    /* 텍스트가 많아도 공간을 침범하지 않게 min-width 0 설정 (Flexbox 최적화) */
+    min-width: 0; 
+}
+.inquiry-list.horizontal-list .inquiry-item .inquiry-date {
+    order: 3;
+    flex-shrink: 0;
+    margin-left: 10px;
+    font-size: 12px;
+}
+
+
+/* ▼▼▼ 새로운 스타일 추가 ▼▼▼ */
+.no-inquiries-text { 
+  text-align: center; 
+  color: #888; 
+  padding: 2rem 0; 
+}
+
+.inquiry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 한 줄에 3개씩 배치 */
+  gap: 15px; /* 카드 사이의 간격 */
+}
+
+.inquiry-card-item {
+  background-color: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px; /* 카드의 최소 높이 */
+}
+
+.inquiry-card-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.inquiry-card-item .item-status {
+  font-size: 0.8rem;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 12px;
+  align-self: flex-start; /* 왼쪽 상단에 배치 */
+  margin-bottom: 10px;
+  background-color: #fde6d8;
+  color: #f39c12;
+}
+
+.inquiry-card-item.answered .item-status {
+  background-color: #e9f7ef;
+  color: #28a745;
+}
+
+.inquiry-card-item .item-title {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: auto; /* 제목이 남은 공간을 차지하게 함 */
+  /* 여러 줄 말줄임 처리 (선택 사항) */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* 2줄까지 표시 */
+  -webkit-box-orient: vertical;
+}
+
+.inquiry-card-item .item-date {
+  font-size: 0.8rem;
+  color: #888;
+  text-align: right;
+  margin-top: 10px;
+}
+
+/* 반응형: 화면이 작아지면 한 줄에 2개 또는 1개씩 보이도록 */
+@media (max-width: 768px) {
+  .inquiry-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 500px) {
+  .inquiry-grid {
+    grid-template-columns: 1fr;
+  }
+}

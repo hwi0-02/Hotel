@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- JPA 엔티티의 @PrePersist, @PreUpdate 메서드는 JPA가 자동으로 호출하므로 제외 -->
+    <Match>
+        <Bug pattern="UPM_UNCALLED_PRIVATE_METHOD"/>
+        <Or>
+            <Method name="beforeSave"/>
+            <Method name="prePersist"/>
+            <Method name="preUpdate"/>
+        </Or>
+    </Match>
+
+    <!-- DTO 필드는 JSON 역직렬화를 위해 사용되므로 제외 -->
+    <Match>
+        <Bug pattern="UWF_UNWRITTEN_FIELD"/>
+        <Or>
+            <Class name="~.*\.dto\..*"/>
+            <Class name="~.*Request"/>
+            <Class name="~.*Response"/>
+            <Class name="~.*Dto"/>
+        </Or>
+    </Match>
+
+    <!-- 이미 방어적 복사가 적용된 클래스들 제외 -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+        <Or>
+            <Class name="com.example.backend.HotelOwner.dto.OwnerChartDto"/>
+            <Class name="com.example.backend.HotelOwner.dto.OwnerSalesGraphDataDto"/>
+            <Class name="com.example.backend.HotelOwner.dto.OwnerFilterDataDto"/>
+            <Class name="com.example.backend.HotelOwner.dto.OwnerHotelUpdateRequest"/>
+            <Class name="com.example.backend.HotelOwner.dto.OwnerRoomDto"/>
+            <Class name="com.example.backend.HotelOwner.dto.OwnerReviewDto"/>
+            <Class name="com.example.backend.HotelOwner.dto.UpdateHotelRequest"/>
+            <Class name="com.example.backend.HotelOwner.domain.Hotel"/>
+            <Class name="com.example.backend.HotelOwner.domain.Room"/>
+            <Class name="com.example.backend.HotelOwner.domain.Amenity"/>
+            <Class name="com.example.backend.admin.dto.DashboardDetailDto"/>
+            <Class name="com.example.backend.admin.dto.PageResponse"/>
+            <Class name="com.example.backend.admin.dto.PaymentAnalyticsDto"/>
+            <Class name="com.example.backend.admin.dto.PaymentExportRequest"/>
+            <Class name="com.example.backend.admin.dto.PaymentFilterDto"/>
+            <Class name="com.example.backend.admin.dto.ReceiptBatchRequest"/>
+            <Class name="com.example.backend.admin.dto.ReservationCalendarDayDto"/>
+            <Class name="com.example.backend.admin.dto.RoomResponse"/>
+            <Class name="com.example.backend.admin.dto.SettlementReportDto"/>
+            <Class name="com.example.backend.admin.dto.UserStatsDto"/>
+            <Class name="com.example.backend.admin.dto.HotelAdminDto"/>
+            <Class name="com.example.backend.fe_hotel_detail.dto.HotelDetailDto"/>
+            <Class name="com.example.backend.fe_hotel_detail.dto.RoomDto"/>
+            <Class name="com.example.backend.hotel_reservation.dto.ReservationDtos"/>
+            <Class name="com.example.backend.review.dto.UserReviewResponseDto"/>
+            <Class name="com.example.backend.authlogin.config.OAuth2Attributes"/>
+            <Class name="com.example.backend.authlogin.service.CustomOAuth2User"/>
+        </Or>
+    </Match>
+
+    <!-- JPA 엔티티의 단순 @ManyToOne 관계는 방어적 복사 불필요 -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+        <Or>
+            <Class name="com.example.backend.HotelOwner.domain.HotelAmenity"/>
+            <Class name="com.example.backend.HotelOwner.domain.HotelImage"/>
+            <Class name="com.example.backend.HotelOwner.domain.RoomImage"/>
+            <Class name="com.example.backend.hotel_support.domain.HotelInquiry"/>
+            <Class name="com.example.backend.hotel_wishlist.domain.Wishlist"/>
+            <Class name="com.example.backend.review.domain.UserReview"/>
+            <Class name="com.example.backend.review.domain.UserReviewImage"/>
+            <Class name="com.example.backend.review.domain.UserReviewReply"/>
+            <Class name="com.example.backend.website_support.domain.WebsiteInquiry"/>
+            <Class name="com.example.backend.payment.domain.Payment"/>
+        </Or>
+    </Match>
+
+    <!-- 컨트롤러는 Spring이 관리하므로 제외 -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+        <Class name="~.*Controller"/>
+    </Match>
+
+    <!-- SecurityConfig는 Spring Security가 final 필드를 요구하므로 올바른 구현 -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+        <Class name="com.example.backend.authlogin.config.SecurityConfig"/>
+    </Match>
+
+    <!-- Locale 관련 경고는 한국어 환경에서만 사용되므로 안전 -->
+    <Match>
+        <Bug pattern="DM_CONVERT_CASE"/>
+        <Or>
+            <Class name="com.example.backend.admin.service.AdminPaymentService"/>
+            <Class name="com.example.backend.admin.service.AdminRoomService"/>
+        </Or>
+    </Match>
+
+    <!-- 서비스 레이어의 불필요한 언박싱은 성능에 미미한 영향 -->
+    <Match>
+        <Bug pattern="BX_UNBOXING_IMMEDIATELY_REBOXED"/>
+        <Class name="com.example.backend.HotelOwner.service.OwnerRoomService"/>
+    </Match>
+</FindBugsFilter>

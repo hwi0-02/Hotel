@@ -1,0 +1,535 @@
+.admin-layout { min-height: 100vh; display: block; --sidebar-width: 280px; }
+.sidebar { position: fixed; top: 0; left: 0; bottom: 0; background: #2c3e50; color: #fff; width: var(--sidebar-width); overflow-y: auto; transition: transform 0.25s ease; }
+.sidebar-header { padding: 24px; border-bottom: 1px solid #34495e; }
+.sidebar-header h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.menu { display: flex; flex-direction: column; padding: 8px 0 16px; gap: 20px; }
+
+/* 메뉴 그룹 스타일 */
+.menu-group { margin-bottom: 8px; }
+.menu-group-title { 
+  padding: 8px 20px 4px 20px; 
+  font-size: 11px; 
+  font-weight: 600; 
+  color: #95a5a6; 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px; 
+  border-bottom: 1px solid rgba(255,255,255,0.1); 
+  margin-bottom: 8px; 
+}
+
+.menu-item { 
+  padding: 12px 20px; 
+  color: #bdc3c7; 
+  text-decoration: none; 
+  transition: all 0.3s ease; 
+  border-left: 3px solid transparent; 
+  outline: none; 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  position: relative; 
+  margin: 2px 8px; 
+  border-radius: 8px; 
+}
+
+.menu-icon { 
+  font-size: 16px; 
+  width: 20px; 
+  height: 20px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+}
+
+.menu-item span { 
+  font-weight: 500; 
+  font-size: 14px; 
+}
+
+.menu-item:hover { 
+  background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); 
+  color: #fff; 
+  transform: translateX(4px); 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+}
+
+.menu-item.active { 
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); 
+  color: #fff; 
+  border-left-color: transparent; 
+  box-shadow: 0 4px 12px rgba(52,152,219,0.3); 
+}
+
+.menu-item.active .menu-icon { 
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); 
+}
+
+.menu-item:focus-visible { 
+  outline: 2px solid rgba(52,152,219,0.4); 
+  outline-offset: 2px; 
+}
+
+.main-content { margin-left: var(--sidebar-width); min-height: 100vh; background: #fff; }
+.top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  padding: 12px 24px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  min-height: 64px;
+  height: auto;
+  gap: 12px;
+}
+.nav-left h1 { margin: 0; font-size: 20px; font-weight: 600; color: #2c3e50; }
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* 관리자 프로필 스타일 */
+.admin-profile { display: flex; align-items: center; gap: 12px; }
+.admin-avatar { 
+  width: 36px; 
+  height: 36px; 
+  border-radius: 50%; 
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+  color: white; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-weight: 600; 
+  font-size: 14px; 
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+}
+.admin-info { display: flex; flex-direction: column; gap: 2px; }
+.admin-name { font-weight: 600; color: #2c3e50; font-size: 14px; }
+.admin-role { font-size: 12px; color: #7f8c8d; }
+
+.btn-logout { 
+  background: #ff4d4f; 
+  color: #fff; 
+  border: none; 
+  padding: 8px 16px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  display: flex; 
+  align-items: center; 
+  gap: 6px; 
+  font-weight: 500; 
+  transition: all 0.3s ease; 
+  box-shadow: 0 2px 8px rgba(255, 77, 79, 0.25); 
+  flex-shrink: 0;
+}
+.btn-logout:hover { 
+  transform: translateY(-1px); 
+  background: #d9363e; 
+  box-shadow: 0 4px 12px rgba(217, 54, 62, 0.35); 
+}
+
+/* Ensure logout button is red even if generic .btn overrides */
+.top-nav .btn-logout {
+  background: #e74c3c !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+.top-nav .btn-logout:hover {
+  background: #c0392b !important;
+}
+.logout-icon { font-size: 16px; }
+
+.content { padding: 0; min-height: calc(100vh - 64px); overflow: auto; }
+
+/* 공통 페이지 래퍼: 모든 관리자 화면 통일된 캔버스 제공 */
+.admin-page {
+  min-height: calc(100vh - 64px - 48px);
+  /* 64: top-nav 높이, 48: 여백 보정 */
+  background: #fff;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-x: hidden;
+}
+
+/* 비어있는 상태에서도 화면이 허전해 보이지 않도록 중앙 정렬 유틸 */
+/* 자식 컴포넌트까지 적용 */
+.admin-page :deep(.no-data),
+.admin-page :deep(.loading) {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 통일된 헤더/설명 간격 */
+.admin-page :deep(.page-header) { margin-bottom: 24px; }
+.admin-page :deep(.page-header h1) { margin: 0 0 8px 0; font-size: 24px; font-weight: 700; color: #2c3e50; }
+.admin-page :deep(.page-description) { margin: 0; color: #7f8c8d; }
+
+/* 공통 섹션 박스 여백/반경 기본값 보정 (있는 경우) */
+.admin-page :deep(.table-section),
+.admin-page :deep(.search-section),
+.admin-page :deep(.filter-section) {
+  border-radius: 12px;
+}
+
+/* Note: following margins revert to component defaults */
+
+/* 각 화면의 루트 컨테이너를 세로 플렉스 레이아웃으로 변경하여 공간 채움 */
+.admin-page > :deep(div) {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* 주요 데이터 섹션이 남는 공간을 채우도록 */
+.admin-page :deep(.table-section) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 햄버거 버튼 */
+.burger { display: none; width: 40px; height: 40px; margin-right: 8px; background: transparent; border: none; padding: 0; cursor: pointer; align-items: center; justify-content: center; }
+.burger span { display: block; width: 20px; height: 2px; background: #2c3e50; margin: 3px 0; transition: background 0.2s; }
+.burger:focus-visible { outline: 2px solid #3498db; border-radius: 4px; }
+
+/* 모바일 사이드바 & 오버레이 */
+.sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 9; }
+
+/* 태블릿 사이즈 */
+@media (max-width: 1200px) {
+  .admin-layout { --sidebar-width: 260px; }
+  .summary-cards { grid-template-columns: repeat(2, 1fr); }
+  .charts-section { grid-template-columns: 1fr; gap: 20px; }
+}
+
+@media (max-width: 1024px) {
+  .admin-layout { --sidebar-width: 280px; }
+  .main-content { margin-left: 0; }
+  .sidebar { 
+    transform: translateX(-100%); 
+    z-index: 10; 
+    box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .burger { display: inline-flex; }
+  .admin-page { border-radius: 0; padding: 16px; }
+  
+  /* 상단 네비게이션 모바일 최적화 */
+  .top-nav {
+    padding: 8px 16px;
+    min-height: 60px;
+    height: auto;
+  }
+  .nav-left h1 { font-size: 18px; }
+  .admin-profile { gap: 8px; }
+  .admin-info { display: none; }
+  .btn-logout { padding: 8px 12px; font-size: 13px; }
+}
+
+/* 모바일 사이즈 */
+@media (max-width: 768px) {
+  .admin-layout { --sidebar-width: 100vw; }
+  
+  .sidebar {
+    width: 100vw;
+    max-width: 320px;
+  }
+  
+  .top-nav { 
+    min-height: 56px; 
+    height: auto;
+    padding: 8px 12px;
+  }
+  .nav-left h1 { font-size: 16px; }
+  .burger { width: 36px; height: 36px; }
+  .burger span { width: 18px; }
+  
+  .admin-avatar { width: 32px; height: 32px; font-size: 12px; }
+  .btn-logout { 
+    padding: 6px 10px; 
+    font-size: 12px;
+  }
+  .logout-icon { font-size: 14px; }
+  
+  /* 메뉴 아이템 모바일 최적화 */
+  .menu-item { 
+    padding: 14px 20px; 
+    margin: 2px 4px;
+    border-radius: 12px;
+  }
+  .menu-icon { font-size: 18px; }
+  .menu-item span { font-size: 15px; }
+  
+  .content { padding: 0; }
+  .admin-page { padding: 12px; }
+}
+
+/* Admin 화면에서는 전역 #app, body의 중앙 정렬을 비활성화 */
+:global(#app) { max-width: none; margin: 0; padding: 0; }
+:global(body) { display: block; place-items: initial; }
+.admin-page, .admin-page * { box-sizing: border-box; }
+
+/* 모든 관리자 화면 루트 컨테이너를 가로 100%로 강제, 가운데 정렬 제거 */
+.admin-page :deep(.admin-dashboard),
+.admin-page :deep(.user-management),
+.admin-page :deep(.coupon-management),
+.admin-page :deep(.hotel-management),
+.admin-page :deep(.business-management),
+.admin-page :deep(.reservation-monitoring),
+.admin-page :deep(.payment-management),
+.admin-page :deep(.review-management),
+.admin-page :deep(.sales-management) {
+  max-width: none !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* --------- Subtle, consistent polish across admin pages --------- */
+/* Cards/sections: consistent radius and soft shadow */
+.admin-page :deep(.card),
+.admin-page :deep(.stat-card),
+.admin-page :deep(.table-section),
+.admin-page :deep(.search-section),
+.admin-page :deep(.filter-section),
+.admin-page :deep(.chart-container),
+.admin-page :deep(.top-hotels-section),
+.admin-page :deep(.table-container) {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  background: #fff;
+}
+
+/* Section spacing standardization */
+.admin-page :deep(.table-section),
+.admin-page :deep(.search-section),
+.admin-page :deep(.filter-section),
+.admin-page :deep(.charts-section),
+.admin-page :deep(.top-hotels-section),
+.admin-page :deep(.pagination-container) {
+  margin-bottom: 20px;
+}
+
+/* Headings and descriptions */
+.admin-page :deep(.page-header h1),
+.admin-page :deep(.management-header h2) {
+  letter-spacing: -0.2px;
+}
+.admin-page :deep(.page-description) {
+  line-height: 1.6;
+}
+
+/* Buttons */
+.admin-page :deep(.btn) {
+  border-radius: 8px;
+  padding: 8px 14px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.admin-page :deep(.btn:hover) {
+  transform: translateY(-1px);
+}
+.admin-page :deep(.btn:focus-visible) {
+  outline: 2px solid rgba(52,152,219,0.35);
+  outline-offset: 2px;
+}
+
+/* 🔹 추가됨: 문의 수 배지 스타일 */
+.badge {
+    /* 레이아웃 및 위치 */
+    position: absolute; /* 절대 위치로 변경하여 텍스트 흐름에서 분리 */
+    right: 8px; /* 메뉴 아이템 끝에 붙도록 조정 */
+    top: 50%; /* 중앙 정렬 */
+    transform: translateY(-50%);
+
+    /* 박스 모델 및 모양 */
+    min-width: 24px; 
+    height: 18px; 
+    padding: 0 6px; 
+    border-radius: 4px; /* 메뉴 아이템의 8px보다 약간 작게, 직사각형에 가깝게 */
+    
+    /* 색상 및 시각 */
+    background: #ffc107; /* 긴급함을 나타내는 밝은 노란색 */
+    color: #333333; /* 짙은 글자색 */
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1; /* 높이 중앙 정렬 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* 그림자 및 전환 */
+    box-shadow: 0 1px 4px rgba(255, 193, 7, 0.6); 
+    transition: all 0.2s ease;
+    z-index: 2; /* 메뉴 항목 위에 표시 */
+}
+
+/* 활성 메뉴 (.menu-item.active) 안의 배지 스타일 */
+.menu-item.active .badge {
+    background: #f82929; /* 활성 상태에서 약간 어두운 노란색 */
+    color: #ffffff !important; /* ✨ [수정 적용] 강제로 짙은 글자색 유지 */
+    box-shadow: none; 
+    transform: translateY(-50%) scale(0.95); 
+}
+
+/* 호버 시 애니메이션 */
+.menu-item:hover .badge {
+    transform: translateY(-50%) scale(1.05);
+}
+
+/* 🚀 상단 알림 영역 (기존 스타일 유지 및 재정의) */
+.notification-area {
+  position: relative;
+  margin-right: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.btn.btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    padding: 0;
+}
+
+/* 이미지 아이콘 크기 조정 */
+.bell-icon {
+    /* ✨ [수정 적용] 크기 24px로 확대 */
+    width: 24px; 
+    height: 24px;
+    filter: brightness(0.5); /* 기본 상태에서 약간 어둡게 */
+    transition: filter 0.2s;
+}
+
+.btn.btn-icon:hover .bell-icon {
+    filter: brightness(0.3); /* 호버 시 더 어둡게 */
+}
+
+/* 알림 뱃지 (top-nav용) */
+.notification-badge {
+    /* ✨ [수정 적용] 아이콘 크기에 맞춰 위치 조정 */
+    position: absolute;
+    top: -4px; 
+    right: -4px;
+    background-color: #ff3b30;
+    color: #fff;
+    font-size: 10px;
+    font-weight: bold;
+    border-radius: 50%;
+    padding: 2px 4px;
+    line-height: 1;
+    min-width: 16px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(255, 59, 48, 0.5);
+    z-index: 10;
+}
+
+/* 🔹 알림 드롭다운 (개선된 스타일) */
+.notification-dropdown {
+    position: absolute;
+    top: 48px; /* top-nav 높이(64px)에 맞춰 위치 조정 */
+    right: -5px; /* 오른쪽으로 약간 이동하여 프로필과 간격 조정 */
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    width: 280px; /* 너비 확장 */
+    z-index: 1000;
+    overflow: hidden;
+    animation: dropdownFade 0.2s ease;
+}
+
+/* 🔹 드롭다운 헤더 */
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    font-weight: 600;
+    font-size: 14px;
+    color: #2c3e50;
+    background-color: #fcfcfc;
+}
+
+.notification-status {
+    color: #e74c3c; /* 미처리 강조 색상 */
+}
+
+/* 🔹 알림 항목 (클릭 가능한 메시지로 통합) */
+.notification-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f8f8f8;
+    font-size: 14px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.2s;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+/* 미처리 알림 (클릭 가능) */
+.notification-action-link {
+    cursor: pointer;
+    background-color: #fffafb; /* 배경색으로 미처리 알림 강조 */
+    font-weight: 500;
+}
+
+.notification-action-link:hover {
+    background-color: #ffeef0;
+}
+
+.notification-action-link .message-text {
+    flex-grow: 1;
+}
+
+/* 알림 아이콘 색상 (Font Awesome 아이콘이 사용될 경우) */
+.text-danger { color: #e74c3c; } /* 경고 아이콘 */
+.text-success { color: #2ecc71; } /* 성공/없음 아이콘 */
+.fas.fa-arrow-right { color: #3498db; } /* 이동 아이콘 */
+
+.no-notifications {
+    text-align: center;
+    color: #888;
+    justify-content: center;
+}
+
+/* 닫기 푸터 */
+.notification-footer {
+    text-align: center;
+    padding: 10px;
+    font-size: 13px;
+    color: #7f8c8d;
+    cursor: pointer;
+    border-top: 1px solid #eee;
+}
+
+.notification-footer:hover {
+    background-color: #f8f9fa;
+}
+
+/* 드롭다운 애니메이션 */
+@keyframes dropdownFade {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
