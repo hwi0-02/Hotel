@@ -10,6 +10,7 @@ import com.example.backend.admin.dto.ApiResponse;
 
 @RestController
 @RequestMapping("/api/admin")
+@CrossOrigin(origins = {"http://localhost:5173", "https://hwiyeong.shop"}, allowCredentials = "true")
 public class AdminController {
 	@GetMapping("/ping")
 	public ResponseEntity<ApiResponse<String>> ping() {

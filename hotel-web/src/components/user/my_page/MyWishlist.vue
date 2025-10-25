@@ -28,19 +28,17 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import http from '@/api/http'
+import http, { resolveBackendUrl } from '@/api/http'
 
 const wishlist = ref([])
 const router = useRouter()
-const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8888'
-
 const fallbackImage = 'https://cdn-icons-png.flaticon.com/512/201/201623.png'
 
 const resolveImageUrl = (url) => {
   if (!url) return fallbackImage
   if (/^https?:\/\//i.test(url)) return url
-  if (url.startsWith('/')) return `${apiBase}${url}`
-  return `${apiBase}/${url}`
+  const normalized = url.startsWith('/') ? url : `/${url}`
+  return resolveBackendUrl(normalized)
 }
 
 // 내 찜 목록 불러오기

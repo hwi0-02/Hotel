@@ -19,6 +19,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 @RestController
 @RequestMapping("/api/admin/stats")
 @RequiredArgsConstructor
+@CrossOrigin(origins = {"http://localhost:5173", "https://hwiyeong.shop"}, allowCredentials = "true")
 public class AdminStatsController {
 
     private final AdminUserRepository userRepository;

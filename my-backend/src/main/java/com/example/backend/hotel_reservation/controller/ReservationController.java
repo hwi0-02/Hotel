@@ -1,44 +1,38 @@
 // src/main/java/com/example/backend/hotel_reservation/controller/ReservationController.java
 package com.example.backend.hotel_reservation.controller;
 
+import com.example.backend.authlogin.domain.User;
+import com.example.backend.authlogin.repository.LoginRepository;
 import com.example.backend.hotel_reservation.dto.ReservationDtos;
 import com.example.backend.hotel_reservation.dto.ReservationDtos.*;
 import com.example.backend.hotel_reservation.service.ReservationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import com.example.backend.authlogin.config.JwtUtil;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.*;
 import java.time.format.DateTimeParseException;
 import java.util.*;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/reservations")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "https://hwiyeong.shop"}, allowCredentials = "true")
 @RequiredArgsConstructor
 public class ReservationController {
 
     private final ReservationService service;
-    private final JwtUtil jwtUtil;
+    private final LoginRepository loginRepository;
 
     @PostMapping("/hold")
-    public HoldResponse hold(
-            @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @RequestBody HoldRequest req
-    ) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing Bearer token");
+    public HoldResponse hold(Authentication authentication,
+                             @RequestBody HoldRequest req) {
+        Long userId = resolveUserId(authentication);
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
         }
-        final String token = authHeader.substring(7);
-        Long userId = jwtUtil.extractClaim(token, claims -> {
-            Object v = claims.get("userId");
-            if (v == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No userId in token");
-            if (v instanceof Number n) return n.longValue();
-            try { return Long.parseLong(v.toString()); }
-            catch (Exception e) { throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid userId in token"); }
-        });
 
         req.setUserId(userId);
         return service.hold(req);
@@ -67,21 +61,14 @@ public class ReservationController {
 
     @GetMapping("/my")
     public List<ReservationDtos.ReservationSummary> getMy(
-            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing Bearer token");
+        Long userId = resolveUserId(authentication);
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
         }
-        final String token = authHeader.substring(7);
-        Long userId = jwtUtil.extractClaim(token, claims -> {
-            Object v = claims.get("userId");
-            if (v == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No userId in token");
-            if (v instanceof Number n) return n.longValue();
-            try { return Long.parseLong(v.toString()); }
-            catch (Exception e) { throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid userId in token"); }
-        });
 
         return service.getByUserId(userId, page, size);
     }
@@ -127,5 +114,31 @@ public class ReservationController {
         } catch (DateTimeParseException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid date: " + raw);
         }
+    }
+
+    private Long resolveUserId(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof User user) {
+            return user.getId();
+        }
+
+        String email = null;
+        if (principal instanceof UserDetails springUser) {
+            email = springUser.getUsername();
+        } else if (principal instanceof String s && !s.isBlank()) {
+            email = s;
+        }
+
+        if (email == null) {
+            return null;
+        }
+
+        return loginRepository.findByEmail(email)
+                .map(User::getId)
+                .orElse(null);
     }
 }

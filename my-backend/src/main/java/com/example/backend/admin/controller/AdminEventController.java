@@ -13,6 +13,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @RestController
 @RequestMapping("/api/admin/events")
 @RequiredArgsConstructor
+@CrossOrigin(origins = {"http://localhost:5173", "https://hwiyeong.shop"}, allowCredentials = "true")
 public class AdminEventController {
     private final AdminEventBus bus;
     private final JwtUtil jwtUtil;

@@ -26,6 +26,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/dashboard")
 @RequiredArgsConstructor
+@CrossOrigin(origins = {"http://localhost:5173", "https://hwiyeong.shop"}, allowCredentials = "true")
 public class AdminDashboardController {
 
     private final AdminUserRepository userRepository;

@@ -154,7 +154,7 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import SearchBarCompact from '@/components/user/hotel_page/SearchBarCompact.vue'
-import http from '@/api/http'
+import http, { resolveBackendUrl } from '@/api/http'
 import { getAuthUser } from '@/utils/auth-storage'
 
 import hotel1Image from '@/images/hotel1.png'
@@ -166,9 +166,13 @@ import hotel5Image from '@/images/hotel5.png'
 const route = useRoute()
 const router = useRouter()
 
-/** ✅ 절대 URL 헬퍼 (VITE_API_ORIGIN=.env 로 환경별 분리) */
-const API_ORIGIN = import.meta.env.VITE_API_ORIGIN || 'http://localhost:8888'
-const toAbs = (u) => !u ? '' : (String(u).startsWith('http') ? u : `${API_ORIGIN}${u}`)
+/** ✅ 절대 URL 헬퍼 */
+const toAbs = (u) => {
+  if (!u) return ''
+  if (/^https?:\/\//i.test(String(u))) return String(u)
+  const normalized = String(u).startsWith('/') ? String(u) : `/${u}`
+  return resolveBackendUrl(normalized)
+}
 
 const isLoading = ref(false)
 const loadError = ref(null)
@@ -367,6 +371,8 @@ async function fetchResults () {
         (Array.isArray(h.images) && h.images[0]) ??
         null
 
+      const cover = toAbs(coverRaw || h.coverImage || h.cover || '')
+
       return {
         id: h.id,
         name: h.name,
@@ -378,7 +384,7 @@ async function fetchResults () {
         lowestPrice: (h.lowestPrice != null && !Number.isNaN(+h.lowestPrice))
           ? +h.lowestPrice
           : ((h.hotelPrice != null && !Number.isNaN(+h.hotelPrice)) ? +h.hotelPrice : null),
-        coverImage: h.coverImage ?? null,
+        coverImage: cover || null,
         amenKeys, // ← 필터 비교에 사용
       }
     })

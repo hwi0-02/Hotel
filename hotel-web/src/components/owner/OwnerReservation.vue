@@ -202,7 +202,10 @@ export default {
     },
     async fetchAllReservations() {
       try {
-        const { data } = await this.$axios.get('/owner/reservations');
+        const token = localStorage.getItem('accessToken');
+        const { data } = await this.$axios.get('/owner/reservations', {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
 
         this.allEvents = data
           .filter(res => res.start && res.end)
@@ -249,7 +252,10 @@ export default {
       this.detailModal.visible = true;
       this.detailModal.loading = true;
       try {
-        const { data } = await this.$axios.get(`/owner/reservations/${id}`);
+        const token = localStorage.getItem('accessToken');
+        const { data } = await this.$axios.get(`/owner/reservations/${id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
         this.detailModal.data = data;
       } catch (e) {
         alert('상세 정보를 불러오지 못했습니다.');
@@ -272,7 +278,14 @@ export default {
         if (!confirm(confirmMessage)) return;
 
         try {
-            await this.$axios.put(`/owner/reservations/${this.detailModal.id}/${action}`);
+            const token = localStorage.getItem('accessToken');
+            await this.$axios.put(
+              `/owner/reservations/${this.detailModal.id}/${action}`,
+              null,
+              {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+              }
+            );
             
             alert('상태가 성공적으로 변경되었습니다.');
 

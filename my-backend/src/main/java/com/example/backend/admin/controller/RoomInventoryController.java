@@ -15,6 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping({"/api/admin/inventory", "/api/admin/rooms"})
 @RequiredArgsConstructor
+@CrossOrigin(origins = {"http://localhost:5173", "https://hwiyeong.shop"}, allowCredentials = "true")
 public class RoomInventoryController {
     private final RoomInventoryService service;
 

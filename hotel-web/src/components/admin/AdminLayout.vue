@@ -154,7 +154,7 @@
 </template>
 
 <script>
-import http from '@/api/http'
+import http, { resolveBackendUrl } from '@/api/http'
 import { getAuthUser, clearAuthUser, notifyAuthChanged } from '@/utils/auth-storage'
 
 export default {
@@ -243,7 +243,7 @@ export default {
     // SSE 연결 로직 (수정: fetchUnansweredCount 호출 추가)
     connectSSE() {
       if (this.sse) return
-      const base = 'http://localhost:8888/api/admin/events/sse'
+      const base = resolveBackendUrl('/api/admin/events/sse')
       if (!getAuthUser()) { this.scheduleReconnect(); return }
       try {
         const es = new EventSource(base, { withCredentials: true })

@@ -4,7 +4,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
-import io.github.bucket4j.Refill;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,6 +15,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -27,18 +27,21 @@ import java.time.Duration;
  * 간단한 IP 기반 요청 레이트 리미터.
  * 새로고침/짧은 시간 내 반복 호출이 일정 횟수를 초과하면 429를 반환한다.
  * 1분에 10개 요청 제한
+ * 
+ * Spring Security보다 먼저 실행되도록 HIGHEST_PRECEDENCE 설정
  */
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE + 10)
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(RateLimitingFilter.class);
     private static final Logger suspiciousLog = LoggerFactory.getLogger("SUSPICIOUS");
 
-    private static final Bandwidth LIMIT = Bandwidth.classic(
-        10,
-        Refill.greedy(10, Duration.ofMinutes(1))
-    );
+    // 1분에 10개 요청으로 제한
+    private static final Bandwidth LIMIT = Bandwidth.builder()
+        .capacity(10)
+        .refillGreedy(10, Duration.ofMinutes(1))
+        .build();
 
     private final Cache<String, Bucket> bucketCache = Caffeine.newBuilder()
         .maximumSize(10_000)
@@ -46,42 +49,61 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         .build();
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         String uri = request.getRequestURI();
-        // actuator, static 리소스는 제한하지 않음
-        if (uri.startsWith("/actuator") || 
+        
+        // OAuth2, 업로드, 정적 리소스는 필터 건너뛰기
+        if (uri.startsWith("/api/oauth2") ||
+            uri.startsWith("/oauth2") ||
+            uri.startsWith("/login/oauth2") ||
             uri.startsWith("/uploads") ||
-            uri.startsWith("/favicon.ico")) {
+            uri.startsWith("/assets") ||
+            uri.startsWith("/actuator") || 
+            uri.startsWith("/favicon.ico") ||
+            uri.endsWith(".js") ||
+            uri.endsWith(".css") ||
+            uri.endsWith(".png") ||
+            uri.endsWith(".jpg") ||
+            uri.endsWith(".ico")) {
+            log.debug("Skipping rate limit for: {}", uri);
             return true;
         }
         // 사전 요청(OPTIONS)은 제한하지 않는다.
-        return "OPTIONS".equalsIgnoreCase(request.getMethod());
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            log.debug("Skipping rate limit for OPTIONS request");
+            return true;
+        }
+        return false;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
         throws ServletException, IOException {
 
         String clientIp = resolveClientIp(request);
         String uri = request.getRequestURI();
-        
-        Bucket bucket = bucketCache.get(clientIp, key -> {
-            log.info("Creating new bucket for IP: {}", key);
+        String method = request.getMethod();
+        String bucketKey = buildBucketKey(clientIp, method, uri);
+
+        log.info("=== Rate Limit Check === IP: {}, Method: {}, URI: {}", clientIp, method, uri);
+
+        Bucket bucket = bucketCache.get(bucketKey, key -> {
+            log.info("Creating new rate limit bucket for key: {}", key);
             return Bucket.builder().addLimit(LIMIT).build();
         });
 
         long availableTokens = bucket.getAvailableTokens();
-        
         if (bucket.tryConsume(1)) {
-            log.debug("Request allowed - IP: {}, URI: {}, Remaining: {}", clientIp, uri, availableTokens - 1);
-            response.setHeader("X-RateLimit-Remaining", String.valueOf(availableTokens - 1));
+            long remaining = availableTokens - 1;
+            log.info("✅ Request ALLOWED - key: {}, Remaining: {}/10", bucketKey, remaining);
+            response.setHeader("X-RateLimit-Remaining", String.valueOf(remaining));
             response.setHeader("X-RateLimit-Limit", "10");
             filterChain.doFilter(request, response);
             return;
         }
 
-        log.warn("Rate limit exceeded - IP: {}, URI: {}", clientIp, uri);
-        suspiciousLog.warn("Rate limit exceeded ip={} uri={}", clientIp, uri);
+        log.warn("❌ Rate limit EXCEEDED - key: {}", bucketKey);
+        suspiciousLog.warn("Rate limit exceeded key={}", bucketKey);
 
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
@@ -99,5 +121,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             return commaIndex > 0 ? forwarded.substring(0, commaIndex).trim() : forwarded.trim();
         }
         return request.getRemoteAddr();
+    }
+
+    private String buildBucketKey(String clientIp, String method, String uri) {
+        return clientIp + '|' + method + '|' + uri;
     }
 }

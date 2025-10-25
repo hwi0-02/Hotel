@@ -25,6 +25,7 @@ import java.util.Locale;
 @RestController
 @RequestMapping("/api/admin/reservations")
 @RequiredArgsConstructor
+@CrossOrigin(origins = {"http://localhost:5173", "https://hwiyeong.shop"}, allowCredentials = "true")
 public class AdminReservationController {
 
     private final AdminReservationService reservationService;

@@ -122,7 +122,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import http from '@/api/http'
+import http, { resolveBackendUrl } from '@/api/http'
 import SafeHtml from '@/components/common/SafeHtml.vue'
 
 const route = useRoute()
@@ -164,6 +164,18 @@ const f = ref({
 /* ✅ 단일 선택 소스 */
 const amenAll  = ref([])          // ['wifi','pool', ...]
 const hotelImages = ref([])
+
+const resolveImageUrl = (url) => {
+  if (!url) return ''
+  if (/^https?:\/\//i.test(String(url))) return String(url)
+  const normalized = String(url).startsWith('/') ? String(url) : `/${url}`
+  return resolveBackendUrl(normalized)
+}
+
+const normalizeHotelImages = (list) =>
+  Array.isArray(list)
+    ? list.map(im => ({ ...im, url: resolveImageUrl(im.url) }))
+    : []
 
 /* ====== 파생 ====== */
 const hasAnyAmenity = computed(() => amenAll.value.length > 0)
@@ -207,7 +219,8 @@ onMounted(async () => {
     amenAll.value = mergeLeftRightToAll(data)
 
     // 호텔 이미지
-    hotelImages.value = (await http.get(`/owner/hotels/my-hotels/${route.params.id}/images`)).data ?? []
+  const imgRes = await http.get(`/owner/hotels/my-hotels/${route.params.id}/images`)
+  hotelImages.value = normalizeHotelImages(imgRes.data ?? [])
   } catch (e) {
     console.error(e)
     error.value = '호텔 정보를 불러오지 못했습니다.'
@@ -255,7 +268,7 @@ async function pickHotelImages(e) {
   const { data } = await http.post(`/owner/hotels/my-hotels/${route.params.id}/images`, fd, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
-  hotelImages.value = data
+  hotelImages.value = normalizeHotelImages(data)
   e.target.value = ''
 }
 
@@ -268,7 +281,7 @@ async function removeHotelImage(imageId) {
 
 async function makeCover(imageId) {
   const { data } = await http.put(`/owner/hotels/my-hotels/${route.params.id}/images/${imageId}/cover`)
-  hotelImages.value = data
+  hotelImages.value = normalizeHotelImages(data)
 }
 </script>
 

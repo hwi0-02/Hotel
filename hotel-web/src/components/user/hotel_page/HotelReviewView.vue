@@ -63,8 +63,8 @@
             class="image-box"
             @click="toggleDeleteExisting(img)"
           >
-            <img
-              :src="`http://localhost:8888${img}`"
+                <img
+                  :src="toImageUrl(img)"
               :class="{ 'to-delete': deleteImages.includes(img) }"
               alt="리뷰 이미지"
             />
@@ -132,9 +132,9 @@
             <img
               v-for="(img, i) in r.images"
               :key="i"
-              :src="`http://localhost:8888${img}`"
+                :src="toImageUrl(img)"
               alt="리뷰 이미지"
-              @click="openImage(`http://localhost:8888${img}`)"
+                @click="openImage(toImageUrl(img))"
             />
           </div>
 
@@ -161,7 +161,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
-import http from '@/api/http'
+import http, { resolveBackendUrl } from '@/api/http'
 import { getAuthUser } from '@/utils/auth-storage'
 
 const route = useRoute()
@@ -183,6 +183,13 @@ const modalImage = ref('')
 const authUser = ref(getAuthUser())
 const userId = computed(() => authUser.value?.id || null)
 const isLoggedIn = computed(() => !!authUser.value)
+
+const toImageUrl = (path) => {
+  if (!path) return ''
+  if (/^https?:\/\//i.test(path)) return path
+  const normalized = path.startsWith('/') ? path : `/${path}`
+  return resolveBackendUrl(normalized)
+}
 
 const syncAuthUser = () => {
   authUser.value = getAuthUser()

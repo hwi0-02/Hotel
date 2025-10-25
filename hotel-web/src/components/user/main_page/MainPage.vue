@@ -192,7 +192,8 @@ import SearchForm from "@/components/user/main_page/SearchForm.vue";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import { Navigation, Pagination } from "swiper/modules";
 import HotelApi from "@/api/HotelApi";
-import { getAuthUser } from '@/utils/auth-storage';
+import { getAuthUser } from "@/utils/auth-storage";
+import { resolveBackendUrl } from "@/api/http";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -310,9 +311,10 @@ export default {
     resolveImage(url) {
       if (!url) return "/images/paradiseHotel.webp";
       if (/^https?:\/\//i.test(url)) return url;
-      const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:8888";
-      if (url.startsWith("/uploads/")) return `${base}${url}`;
-      return `${base}/uploads/${url}`;
+      const normalized = url.startsWith("/uploads/")
+        ? url
+        : `/uploads/${url.replace(/^\/+/, "")}`;
+      return resolveBackendUrl(normalized);
     },
     goHotelDetail(id) {
       if (id) this.$router.push({ name: "HotelDetail", params: { id } });

@@ -2,7 +2,6 @@ package com.example.backend.authlogin.config;
 
 import com.example.backend.authlogin.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -18,7 +17,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -30,14 +28,10 @@ public class SecurityConfig {
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Value("${cors.allowed.origins:http://localhost:5173}")
-    private String allowedOrigins;
-
     @Bean
     CorsConfigurationSource corsSource() {
         CorsConfiguration c = new CorsConfiguration();
-        List<String> origins = Arrays.asList(allowedOrigins.split(","));
-        c.setAllowedOrigins(origins);
+        c.setAllowedOrigins(List.of("https://hwiyeong.shop", "http://localhost:5173"));
         c.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         c.setAllowedHeaders(List.of("*"));
         c.setAllowCredentials(true);
@@ -81,10 +75,16 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
 
                 // 헬스/테스트/업로드 공개
+                .requestMatchers("/api/health").permitAll()
                 .requestMatchers("/api/admin/health/**").permitAll()
                 .requestMatchers("/api/admin/test").permitAll()
                 .requestMatchers("/api/admin/events/sse").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
+
+                // OAuth2 경로 모두 허용
+                .requestMatchers("/api/oauth2/**").permitAll()
+                .requestMatchers("/oauth2/**").permitAll()
+                .requestMatchers("/login/oauth2/**").permitAll()
 
                 // 어드민 API
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -113,7 +113,13 @@ public class SecurityConfig {
             ))
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable())
-            //.oauth2Login(oauth2 -> oauth2.disable())
+            .oauth2Login(oauth -> oauth
+                .authorizationEndpoint(ep -> ep.baseUri("/api/oauth2/authorization"))
+                .redirectionEndpoint(ep -> ep.baseUri("/login/oauth2/code/*"))
+                .loginPage("/api/oauth2/authorization/naver")
+                .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
+                .successHandler(oAuth2AuthenticationSuccessHandler)
+            )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -128,21 +134,27 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/", "/login",
-                    "/oauth2/**", "/login/oauth2/code/**",
-                    "/css/**", "/js/**", "/images/**", "/public/**", "/uploads/**",
-                    "/api/users/register", "/api/users/login",
-                    // 참고: /api/** 는 apiChain 이 담당
-                    "/api/password/**", "/api/test/**"
+                    "/",
+                    "/index.html",
+                    "/assets/**",
+                    "/uploads/**",
+                    "/api/health",
+                    "/api/oauth2/**",
+                    "/oauth2/**",
+                    "/login/oauth2/**",
+                    "/css/**", "/js/**", "/images/**", "/public/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form.disable())
-            .httpBasic(basic -> basic.disable());
-            // //.oauth2Login(oauth2 -> oauth2
-            //     .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
-            //     .successHandler(oAuth2AuthenticationSuccessHandler)
-            // );
+            .httpBasic(basic -> basic.disable())
+            .oauth2Login(oauth -> oauth
+                .authorizationEndpoint(ep -> ep.baseUri("/api/oauth2/authorization"))
+                .redirectionEndpoint(ep -> ep.baseUri("/login/oauth2/code/*"))
+                .loginPage("/api/oauth2/authorization/naver")
+                .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
+                .successHandler(oAuth2AuthenticationSuccessHandler)
+            );
 
         return http.build();
     }

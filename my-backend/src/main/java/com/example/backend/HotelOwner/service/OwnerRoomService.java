@@ -93,16 +93,16 @@ public class OwnerRoomService {
         // 이미지 저장
         if (images != null && !images.isEmpty()) {
             List<RoomImage> toSave = new ArrayList<>();
-            for (int i = 0; i < images.size(); i++) {
-                String url = fileStorageService.storeFile(images.get(i));
-                RoomImage img = RoomImage.builder()
-                        .room(saved)
-                        .url(url)
-                        .sortNo(i)
-                        .isCover(i == 0) // 첫 번째 이미지를 커버로
-                        .build();
-                toSave.add(img);
-            }
+        for (int i = 0; i < images.size(); i++) {
+        String url = fileStorageService.storeFile(images.get(i));
+        RoomImage img = RoomImage.builder()
+            .room(saved)
+            .url(url)
+            .sortNo(i)
+            .isCover(i == 0) // 첫 번째 이미지를 커버로
+            .build();
+        toSave.add(img);
+        }
             roomImageRepository.saveAll(toSave);
         }
 
@@ -202,16 +202,16 @@ public class OwnerRoomService {
             boolean hasCover = room.getImages().stream().anyMatch(RoomImage::isCover);
 
             List<RoomImage> toAdd = new ArrayList<>();
-            for (int i = 0; i < newImages.size(); i++) {
-                String url = fileStorageService.storeFile(newImages.get(i));
-                RoomImage img = RoomImage.builder()
-                        .room(room)
-                        .url(url)
-                        .sortNo(maxSortNo + 1 + i)
-                        .isCover(!hasCover && i == 0) // 기존에 커버 없으면 첫 신규를 커버로
-                        .build();
-                toAdd.add(img);
-            }
+        for (int i = 0; i < newImages.size(); i++) {
+        String url = fileStorageService.storeFile(newImages.get(i));
+        RoomImage img = RoomImage.builder()
+            .room(room)
+            .url(url)
+            .sortNo(maxSortNo + 1 + i)
+            .isCover(!hasCover && i == 0) // 기존에 커버 없으면 첫 신규를 커버로
+            .build();
+        toAdd.add(img);
+        }
             roomImageRepository.saveAll(toAdd);
             room.getImages().addAll(toAdd);
         }

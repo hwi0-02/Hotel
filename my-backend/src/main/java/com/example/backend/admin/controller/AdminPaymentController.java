@@ -33,6 +33,7 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/admin/payments")
 @RequiredArgsConstructor
+@CrossOrigin(origins = {"http://localhost:5173", "https://hwiyeong.shop"}, allowCredentials = "true")
 @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
 public class AdminPaymentController {
     private final AdminPaymentService paymentService;

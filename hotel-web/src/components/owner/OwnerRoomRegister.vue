@@ -190,6 +190,8 @@
 </template>
 
 <script>
+import { resolveBackendUrl } from "@/api/http";
+
 export default {
   name: 'OwnerRoomRegister',
   props: ['id'],
@@ -306,10 +308,9 @@ export default {
         };
 
         if (data.imageUrls && data.imageUrls.length > 0) {
-          const baseURL = 'http://localhost:8888';
-          this.images = data.imageUrls.map((url, index) => ({ 
-            id: `existing-${index}`, 
-            preview: String(url).startsWith('http') ? url : `${baseURL}${url}`,
+          this.images = data.imageUrls.map((url, index) => ({
+            id: `existing-${index}`,
+            preview: String(url).startsWith('http') ? url : resolveBackendUrl(url),
             file: null,
             isExisting: true,
             originalUrl: url

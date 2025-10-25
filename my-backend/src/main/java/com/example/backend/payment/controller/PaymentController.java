@@ -29,7 +29,7 @@ import java.util.*;
 @Slf4j
 @RestController
 @RequestMapping("/api/payments")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "https://hwiyeong.shop"}, allowCredentials = "true")
 public class PaymentController {
 
     private final PaymentRepository repository;

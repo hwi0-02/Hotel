@@ -49,8 +49,7 @@ public class OwnerReservationService {
         roomTypeColorMap.put("트윈룸",     "#a855f7");
 
         return reservations.stream()
-            .filter(res -> res.getStatus() == Reservation.Status.COMPLETED
-                        || res.getStatus() == Reservation.Status.CANCELLED)
+            .filter(res -> res.getStatus() != Reservation.Status.EXPIRED)
             .map(res -> {
                 User user = userRepository.findById(res.getUserId()).orElse(null);
                 Room room = ownerRoomRepository.findById(res.getRoomId()).orElse(null);
@@ -61,19 +60,23 @@ public class OwnerReservationService {
                         ? "#9ca3af"
                         : roomTypeColorMap.getOrDefault(roomTypeName, "#848484");
 
+                LocalDate startDate = OwnerReservationDto.toLocalDate(res.getStartDate());
+                LocalDate endDate = OwnerReservationDto.toLocalDate(res.getEndDate());
+
                 return OwnerReservationDto.CalendarEvent.builder()
                     .id(res.getId())
                     .title(guestName)
-                    .start(OwnerReservationDto.toLocalDate(res.getStartDate()))
-                    .end(OwnerReservationDto.toLocalDate(res.getEndDate()).plusDays(1))
+                    .start(startDate)
+                    .end(endDate != null ? endDate.plusDays(1) : null)
                     .color(eventColor)
                     .status(res.getStatus().name())
                     .extendedProps(OwnerReservationDto.ExtendedProps.builder()
                         .guestName(guestName)
                         .roomName((room != null) ? room.getName() : "삭제된 객실")
                         .roomType(roomTypeName)
-                        .resStatus(res.getResStatus() != null ? res.getResStatus().name()
-                                                              : Reservation.ResStatus.NOT_VISITED.name())
+                        .resStatus(Optional.ofNullable(res.getResStatus())
+                                           .orElse(Reservation.ResStatus.NOT_VISITED)
+                                           .name())
                         .build())
                     .build();
             })

@@ -71,7 +71,7 @@
 <style scoped src="@/assets/css/login/login.css"></style>
 
 <script>
-import http from "@/api/http";
+import http, { resolveBackendUrl } from "@/api/http";
 import UserApi from "@/api/UserApi";
 import { setAuthUser, clearAuthUser, notifyAuthChanged } from "@/utils/auth-storage";
 
@@ -254,14 +254,18 @@ export default {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return emailRegex.test(email);
     },
+    redirectToOAuth(provider) {
+      const target = resolveBackendUrl(`/api/oauth2/authorization/${provider}`);
+      window.location.href = target;
+    },
     naverLogin() {
-      window.location.href = "http://localhost:8888/oauth2/authorization/naver";
+      this.redirectToOAuth("naver");
     },
     googleLogin() {
-      window.location.href = "http://localhost:8888/oauth2/authorization/google";
+      this.redirectToOAuth("google");
     },
     kakaoLogin() {
-      window.location.href = "http://localhost:8888/oauth2/authorization/kakao";
+      this.redirectToOAuth("kakao");
     },
     renderRecaptcha() {
       if (!this.recaptchaSiteKey) {

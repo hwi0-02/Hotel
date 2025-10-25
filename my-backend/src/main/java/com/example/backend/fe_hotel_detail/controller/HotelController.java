@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController("feHotelController") // ★ 빈 이름 고정
 @RequestMapping("/api")              // FE는 기존 경로 유지 (/api/hotels/{id})
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "https://hwiyeong.shop"}, allowCredentials = "true")
 @RequiredArgsConstructor
 public class HotelController {
     private final FeHotelDetailService hotelService;

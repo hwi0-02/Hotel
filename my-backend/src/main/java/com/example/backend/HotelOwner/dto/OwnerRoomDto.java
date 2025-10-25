@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import java.net.URI;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -38,16 +39,16 @@ public class OwnerRoomDto {
         public boolean isSmoke()     { return Boolean.TRUE.equals(smoke); }
 
     Facilities copy() {
-            return Facilities.builder()
-                    .aircon(aircon)
-                    .wifi(wifi)
-                    .freeWater(freeWater)
-                    .hasWindow(hasWindow)
-                    .sharedBath(sharedBath)
-                    .smoke(smoke)
-                    .bath(bath)
-                    .build();
-        }
+        return Facilities.builder()
+            .aircon(aircon)
+            .wifi(wifi)
+            .freeWater(freeWater)
+            .hasWindow(hasWindow)
+            .sharedBath(sharedBath)
+            .smoke(smoke)
+            .bath(bath)
+            .build();
+    }
     }
 
     /* ===== 등록/수정 공통 필드 ===== */
@@ -235,9 +236,38 @@ public class OwnerRoomDto {
                     .sharedBath(bool(r.getSharedBath()))
                     .smoke(bool(r.getSmoke()))
                     .imageUrls(r.getImages() == null ? List.of()
-                            : r.getImages().stream().map(img -> img.getUrl()).toList())
+                            : r.getImages().stream()
+                                .map(img -> normalizeImageUrl(img.getUrl()))
+                                .toList())
                     .build();
         }
         private static Boolean bool(Boolean v) { return v != null && v; }
+
+        private static String normalizeImageUrl(String url) {
+            if (url == null || url.isBlank()) {
+                return url;
+            }
+
+            String trimmed = url.trim();
+            int uploadsIndex = trimmed.indexOf("/uploads/");
+            if (uploadsIndex >= 0) {
+                return trimmed.substring(uploadsIndex);
+            }
+
+            if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+                try {
+                    URI uri = URI.create(trimmed);
+                    String path = uri.getPath();
+                    if (path != null && !path.isBlank()) {
+                        return path.startsWith("/") ? path : "/" + path;
+                    }
+                } catch (IllegalArgumentException ignored) {
+                    return trimmed;
+                }
+                return trimmed;
+            }
+
+            return trimmed.startsWith("/") ? trimmed : "/" + trimmed;
+        }
     }
 }

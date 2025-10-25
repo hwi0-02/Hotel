@@ -47,6 +47,7 @@ import { useRouter, useRoute } from "vue-router"
 import MyWishlist from "@/components/user/my_page/MyWishlist.vue"
 import MyReview from "@/components/user/my_page/MyReview.vue"
 import UserApi from "@/api/UserApi"
+import { resolveBackendUrl } from "@/api/http"
 import { getAuthUser, setAuthUser, notifyAuthChanged } from "@/utils/auth-storage"
 
 const router = useRouter()
@@ -59,13 +60,11 @@ const activeTab = ref("account")
 const fileInput = ref(null)
 const uploading = ref(false)
 
-const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:8888"
-
 const resolveImageUrl = (url) => {
   if (!url) return ""
   if (/^https?:\/\//i.test(url)) return url
-  if (url.startsWith("/")) return `${apiBase}${url}`
-  return `${apiBase}/${url}`
+  const normalized = url.startsWith("/") ? url : `/${url}`
+  return resolveBackendUrl(normalized)
 }
 
 const setTab = (tab) => {

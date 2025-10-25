@@ -61,14 +61,15 @@
       </div>
 
       <!-- 검색 버튼 (동작: 날짜만 URL 반영) -->
-      <button class="cell btn" @click="applyQueryOnly">설정하기</button>
+      <!-- <button class="cell btn" @click="replaceOnlyDates(ci, co, adults, children)">설정하기</button> -->
     </div>
 
     <!-- 실제 캘린더(range) -->
     <FlatPickr
       ref="rangePicker"
-      v-model="dateRange"
       :config="dateRangeConfig"
+      :value="dateRange"  
+      @change="onDateChange" 
       class="hidden-picker"
     />
   </div>
@@ -98,6 +99,24 @@ const rangePicker = ref(null)
 const showTravelerMenu = ref(false)
 const lastGood = ref({ ci: null, co: null })
 
+function onDateChange(selectedDates) {
+  // selectedDates는 FlatPickr에서 반환된 날짜 배열입니다.
+  const ci = coerceDate(selectedDates[0]);
+  let co = coerceDate(selectedDates[1]);
+
+  if (ci && co && co <= ci) {
+    co = new Date(ci);
+    co.setDate(co.getDate() + 1);  // 체크인 날짜보다 체크아웃 날짜가 작으면 +1일
+  }
+
+  if (ci && co && (ci !== lastGood.value.ci || co !== lastGood.value.co)) {
+    dateRange.value = [ci, co];
+    lastGood.value = { ci, co };
+
+    // URL 갱신
+    replaceOnlyDates(ci, co);
+  }
+}
 // ---- util
 const isValidDateObj = (d) => d instanceof Date && !Number.isNaN(d.getTime())
 const asArray = (v) => {
@@ -201,9 +220,11 @@ const dateRangeConfig = {
     }
 
     // len === 2 → 내부 상태 업데이트 + URL 갱신
-    dateRange.value = [ci, co]
-    lastGood.value = { ci: ci || null, co: co || null }
-    replaceOnlyDates(ci, co)
+    if (ci && co && (ci !== dateRange.value[0] || co !== dateRange.value[1])) {
+      dateRange.value = [ci, co]
+      lastGood.value = { ci: ci || null, co: co || null }
+      replaceOnlyDates(ci, co, adults, children)
+    }
   },
 
   onClose: (sd, _str, instance) => {
@@ -219,7 +240,7 @@ function setRange(ci, co) {
   ci = coerceDate(ci); co = coerceDate(co)
   const y1 = ci?.getFullYear?.(), y2 = co?.getFullYear?.()
   if ((y1 && (y1 < 2015 || y1 > 2035)) || (y2 && (y2 < 2015 || y2 > 2035))) return
-  if (ci && co) {
+  if (ci && co && (ci !== dateRange.value[0] || co !== dateRange.value[1])) {
     dateRange.value = [ci, co]
     lastGood.value  = { ci, co }
     const fp = rangePicker.value?._flatpickr || rangePicker.value?.fp
@@ -233,9 +254,16 @@ function syncFromRoute() {
 
   const ci = coerceDate(route.query.checkIn)
   const co = coerceDate(route.query.checkOut)
-  if (ci && co) setRange(ci, co)
+  if (ci && co && (ci !== dateRange.value[0] || co !== dateRange.value[1])) {
+     setRange(ci, co)
+  }
 }
-watch(() => route.fullPath, syncFromRoute, { immediate: true })
+watch(() => route.fullPath, (newPath) => {
+  // URL에서 날짜나 인원 등의 값이 변경되었을 때만 동기화
+  if (route.query.checkIn !== lastGood.value.ci || route.query.checkOut !== lastGood.value.co) {
+    syncFromRoute();
+  }
+}, { immediate: true });
 
 // 드롭다운 외부 클릭 닫기
 function onDocClick(e){
@@ -255,21 +283,35 @@ function openCalendar () {
   if (fp) fp.open()
 }
 function toggleTravelerMenu(){ showTravelerMenu.value = !showTravelerMenu.value }
-function closeTravelerMenu(){ showTravelerMenu.value = false }
+function closeTravelerMenu(){ 
+  showTravelerMenu.value = false; 
+  const query = {
+    ...route.query,
+    checkIn: route.query.checkIn,
+    checkOut: route.query.checkOut,
+    adults: adults.value,
+    children: children.value
+  }
+  router.replace({path : route.path, query });
+}
 function inc(k){ if (k==='adults') adults.value++; else children.value++; }
 function dec(k){ if (k==='adults' && adults.value>1) adults.value--; else if (k==='children' && children.value>0) children.value--; }
 
 // ✅ URL에서 checkIn/checkOut만 갱신(이동 없음)
-function replaceOnlyDates(ci, co) {
-  const query = {
-    ...route.query,
-    checkIn: toYmd(ci),
-    checkOut: toYmd(co),
-    adults: adults.value,
-    children: children.value
+function replaceOnlyDates(ci, co, adults, children) {
+  const currentCheckIn = route.query.checkIn;
+  const currentCheckOut = route.query.checkOut;
+  if (toYmd(ci) !== currentCheckIn || toYmd(co) !== currentCheckOut) {
+    const query = {
+      ...route.query,
+      checkIn: toYmd(ci),
+      checkOut: toYmd(co),
+      adults: adults.value,
+      children: children.value
+    };    
+      Object.keys(query).forEach(k => (query[k] == null || query[k] === '') && delete query[k]);
+      router.replace({ path: route.path, query });
   }
-  Object.keys(query).forEach(k => (query[k] == null || query[k] === '') && delete query[k])
-  router.replace({ path: route.path, query })
 }
 
 // ✅ 버튼 클릭 시: 첫 날짜만 있으면 +1일 보정, 그리고 URL 갱신
@@ -284,7 +326,7 @@ function applyQueryOnly () {
   dateRange.value = (ci && co) ? [ci, co] : []
   lastGood.value  = { ci: ci || null, co: co || null }
 
-  if (ci && co) replaceOnlyDates(ci, co)
+  if (ci && co) replaceOnlyDates(ci, co, adults.value, children.value)
 }
 </script>
 

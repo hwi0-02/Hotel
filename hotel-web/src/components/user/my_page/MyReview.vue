@@ -62,7 +62,7 @@
               <img
                 v-for="(img, i) in editOldImages"
                 :key="i"
-                :src="`http://localhost:8888${img}`"
+                :src="toImageUrl(img)"
                 @click="toggleDelete(img)"
                 :class="{ 'to-delete': deleteImages.includes(img) }"
                 alt="기존 이미지"
@@ -109,9 +109,9 @@
             <img
               v-for="(img, i) in review.images"
               :key="i"
-              :src="`http://localhost:8888${img}`"
+              :src="toImageUrl(img)"
               alt="리뷰 이미지"
-              @click="openImage(`http://localhost:8888${img}`)"
+              @click="openImage(toImageUrl(img))"
             />
           </div>
 
@@ -140,7 +140,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import http from '@/api/http'
+import http, { resolveBackendUrl } from '@/api/http'
 import { getAuthUser } from '@/utils/auth-storage'
 
 const reviews = ref([])
@@ -176,6 +176,13 @@ const deleteImages = ref([])
 
 const savedUser = getAuthUser() || {}
 const currentUserId = savedUser.id || null
+
+const toImageUrl = (path) => {
+  if (!path) return ''
+  if (/^https?:\/\//i.test(path)) return path
+  const normalized = path.startsWith('/') ? path : `/${path}`
+  return resolveBackendUrl(normalized)
+}
 
 // ✅ 이미지 모달
 const showModal = ref(false)

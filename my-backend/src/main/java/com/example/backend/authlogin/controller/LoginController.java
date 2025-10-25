@@ -41,7 +41,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:5173", "https://hwiyeong.shop"}, allowCredentials = "true")
 public class LoginController {
     
     private final LoginService loginService;

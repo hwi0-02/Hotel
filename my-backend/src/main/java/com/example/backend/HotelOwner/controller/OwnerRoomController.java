@@ -16,6 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/owner/rooms")
 @RequiredArgsConstructor
+@CrossOrigin(origins = {"http://localhost:5173", "https://hwiyeong.shop"}, allowCredentials = "true")
 public class OwnerRoomController {
 
     private final OwnerRoomService roomService;

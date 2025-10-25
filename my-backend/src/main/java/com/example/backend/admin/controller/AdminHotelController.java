@@ -14,6 +14,11 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/admin/hotels")
+@CrossOrigin(
+    origins = {"http://localhost:5173", "https://hwiyeong.shop"},
+    allowCredentials = "true",
+    methods = { RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS }
+)
 public class AdminHotelController {
 
     private final AdminHotelService hotelService;

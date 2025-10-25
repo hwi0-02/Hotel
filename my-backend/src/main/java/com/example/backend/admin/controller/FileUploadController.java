@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -21,13 +22,11 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/admin/upload")
 @RequiredArgsConstructor
+@CrossOrigin(origins = {"http://localhost:5173", "https://hwiyeong.shop"}, allowCredentials = "true")
 public class FileUploadController {
 
     @Value("${file.upload.dir:uploads}")
     private String uploadDir;
-
-    @Value("${file.upload.url:http://localhost:8080/uploads}")
-    private String uploadUrl;
 
     @PostMapping("/room-image")
     public ResponseEntity<ApiResponse<Map<String, String>>> uploadRoomImage(
@@ -70,10 +69,14 @@ public class FileUploadController {
             Path targetPath = uploadPath.resolve(filename);
             Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
-            // URL 생성
-            String fileUrl = uploadUrl + "/rooms/" + filename;
+            // 정적 리소스에서 접근 가능한 경로와 요청 기반 공개 URL 생성
+            String publicPath = "/uploads/rooms/" + filename;
+            String fileUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path(publicPath)
+                    .toUriString();
 
             Map<String, String> result = new HashMap<>();
+            result.put("path", publicPath);
             result.put("url", fileUrl);
             result.put("filename", filename);
 

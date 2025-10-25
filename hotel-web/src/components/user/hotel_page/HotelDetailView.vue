@@ -3,7 +3,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import HotelApi from '@/api/HotelApi'
-import http from '@/api/http'
+import http, { resolveBackendUrl } from '@/api/http'
 import ReservationApi from '@/api/ReservationApi'
 import DetailSearchBar from './DetailSearchBar.vue'
 import { getAuthUser } from '@/utils/auth-storage'
@@ -150,11 +150,24 @@ const toBool = (v) => v === true || v === 1 || v === '1' || v === 'true' || v ==
 /* =========================
  * 초기 로딩
  * ========================= */
+const toAbs = (u) => {
+  if (!u) return ''
+  if (/^https?:\/\//i.test(String(u))) return String(u)
+  const normalized = String(u).startsWith('/') ? String(u) : `/${u}`
+  return resolveBackendUrl(normalized)
+}
+
 onMounted(async () => {
   try {
     const data = await HotelApi.getDetail(route.params.id)
     const h = data?.hotel ?? data ?? null
-    hotel.value = h
+    const images = Array.isArray(h?.images) ? h.images.map(toAbs) : []
+    const cover = toAbs(h?.coverImage || h?.cover || images[0] || '')
+    hotel.value = {
+      ...h,
+      images,
+      coverImage: cover || null
+    }
 
     const ciYmd = checkInStr.value || null
     const coYmd = checkOutStr.value || null
@@ -183,6 +196,11 @@ onMounted(async () => {
         const n = typeof raw === 'number' ? raw : Number(String(raw).replace(/[^0-9]/g, ''))
         return Number.isFinite(n) ? n : null
       })()
+      const photosRaw = Array.isArray(r.photos) ? r.photos
+        : Array.isArray(r.images) ? r.images
+        : []
+      const photos = photosRaw.map(toAbs)
+
       return {
         id: r.id,
         name: r.name,
@@ -206,7 +224,7 @@ onMounted(async () => {
         wifi:        toBool(r.wifi),
         status:      r.status ?? '',
         roomType:    r.room_type ?? r.roomType ?? '',
-        photos:      r.photos ?? r.images ?? [],
+        photos,
         qty:         remain,
         roomCount:   Math.max(1, minRooms)
       }
