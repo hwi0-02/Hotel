@@ -86,8 +86,16 @@ public class AdminPaymentNotificationService {
             return;
         }
 
-        if (payment.getUser() == null || payment.getUser().getEmail() == null) {
-            log.warn("결제 완료 알림을 전송하지 못했습니다. 사용자 이메일이 없습니다. paymentId={}", payment.getId());
+        // 결제창에서 입력한 이메일을 우선 사용, 없으면 사용자 계정 이메일 사용
+        String recipientEmail = null;
+        if (payment.getEmail() != null && !payment.getEmail().isBlank()) {
+            recipientEmail = payment.getEmail();
+        } else if (payment.getUser() != null && payment.getUser().getEmail() != null) {
+            recipientEmail = payment.getUser().getEmail();
+        }
+
+        if (recipientEmail == null) {
+            log.warn("결제 완료 알림을 전송하지 못했습니다. 이메일이 없습니다. paymentId={}", payment.getId());
             return;
         }
 
@@ -100,11 +108,11 @@ public class AdminPaymentNotificationService {
                 .includeReceipt(true)
                 .build();
 
-        CustomerNotificationResponse response = sendCustomerNotification(payment, payment.getUser().getEmail(), request);
+        CustomerNotificationResponse response = sendCustomerNotification(payment, recipientEmail, request);
         if (!response.isSuccess()) {
-            log.warn("결제 완료 안내 이메일 전송 실패 - paymentId={} recipient={}", payment.getId(), payment.getUser().getEmail());
+            log.warn("결제 완료 안내 이메일 전송 실패 - paymentId={} recipient={}", payment.getId(), recipientEmail);
         } else {
-            log.info("결제 완료 안내 이메일 전송 - paymentId={} recipient={}", payment.getId(), payment.getUser().getEmail());
+            log.info("결제 완료 안내 이메일 전송 - paymentId={} recipient={}", payment.getId(), recipientEmail);
         }
     }
 
@@ -378,6 +386,10 @@ public class AdminPaymentNotificationService {
     }
 
     private String resolveCustomerName(Payment payment) {
+        // 결제창에서 입력한 이름을 우선 사용
+        if (payment.getCustomerName() != null && !payment.getCustomerName().isBlank()) {
+            return payment.getCustomerName();
+        }
         if (payment.getUser() != null && payment.getUser().getName() != null) {
             return payment.getUser().getName();
         }

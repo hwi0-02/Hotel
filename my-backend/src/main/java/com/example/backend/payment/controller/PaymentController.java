@@ -81,7 +81,7 @@ public class PaymentController {
     /** 결제 요청 생성 (PENDING) */
     @Transactional
     @PostMapping("/add")
-    public ResponseEntity<?> add(@RequestBody Payment payload) {
+    public ResponseEntity<?> add(@RequestBody Map<String, Object> payload) {
         String email = currentUserEmail();
         if (email == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "unauthenticated"));
@@ -92,32 +92,63 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "user not found"));
         }
 
-        if (payload.getOrderId() != null && repository.existsByOrderId(payload.getOrderId())) {
+        // 필수 필드 추출
+        Long reservationId = payload.get("reservationId") != null 
+                ? Long.valueOf(String.valueOf(payload.get("reservationId"))) : null;
+        String orderId = payload.get("orderId") != null ? String.valueOf(payload.get("orderId")) : null;
+        String orderName = payload.get("orderName") != null ? String.valueOf(payload.get("orderName")) : null;
+        String paymentMethod = payload.get("paymentMethod") != null 
+                ? String.valueOf(payload.get("paymentMethod")) : "TOSS_PAY";
+        
+        Integer basePrice = payload.get("basePrice") != null 
+                ? Integer.valueOf(String.valueOf(payload.get("basePrice"))) : 0;
+        Integer tax = payload.get("tax") != null 
+                ? Integer.valueOf(String.valueOf(payload.get("tax"))) : 0;
+        Integer discount = payload.get("discount") != null 
+                ? Integer.valueOf(String.valueOf(payload.get("discount"))) : 0;
+        Integer amount = payload.get("amount") != null 
+                ? Integer.valueOf(String.valueOf(payload.get("amount"))) : null;
+        String paymentKey = payload.get("paymentKey") != null 
+                ? String.valueOf(payload.get("paymentKey")) : "";
+
+        // 결제자 정보 추출
+        String customerEmail = payload.get("email") != null ? String.valueOf(payload.get("email")) : null;
+        String customerName = payload.get("customerName") != null ? String.valueOf(payload.get("customerName")) : null;
+        String customerPhone = payload.get("phone") != null ? String.valueOf(payload.get("phone")) : null;
+
+        if (orderId != null && repository.existsByOrderId(orderId)) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "duplicate orderId"));
         }
 
         // 예약 존재 여부 확인 (FK 무결성)
-        Reservation reservation = reservationRepository.findById(payload.getReservationId()).orElse(null);
+        if (reservationId == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "reservationId is required"));
+        }
+        Reservation reservation = reservationRepository.findById(reservationId).orElse(null);
         if (reservation == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "reservation not found"));
         }
 
         Payment p = Payment.builder()
-                .reservationId(payload.getReservationId())
-                .userId(user.getId()) // userId 명시적 설정 (FK 무결성)
-                .orderId(payload.getOrderId())
-                .orderName(payload.getOrderName())
-                .paymentMethod(Optional.ofNullable(payload.getPaymentMethod()).orElse("TOSS_PAY"))
-                .basePrice(payload.getBasePrice() != null ? payload.getBasePrice() : 0)
-                .tax(payload.getTax() != null ? payload.getTax() : 0)
-                .discount(payload.getDiscount() != null ? payload.getDiscount() : 0)
-                .amount(payload.getAmount())
-                .paymentKey(payload.getPaymentKey())
+                .reservationId(reservationId)
+                .userId(user.getId())
+                .orderId(orderId)
+                .orderName(orderName)
+                .paymentMethod(paymentMethod)
+                .basePrice(basePrice)
+                .tax(tax)
+                .discount(discount)
+                .amount(amount)
+                .paymentKey(paymentKey)
+                .email(customerEmail)
+                .customerName(customerName)
+                .phone(customerPhone)
                 .expireAt(LocalDateTime.now().plusMinutes(2))
                 .build();
 
-        p.setUser(user); // 연관관계 설정 (userId는 builder에서 이미 설정됨)
+        p.setUser(user);
         p.setStatus(Payment.Status.PENDING);
 
         repository.save(p);
@@ -337,6 +368,9 @@ public class PaymentController {
         snapshot.setAmount(source.getAmount());
         snapshot.setPaymentKey(source.getPaymentKey());
         snapshot.setReceiptUrl(source.getReceiptUrl());
+        snapshot.setEmail(source.getEmail());
+        snapshot.setCustomerName(source.getCustomerName());
+        snapshot.setPhone(source.getPhone());
         snapshot.setStatus(source.getStatus());
         snapshot.setCreatedAt(source.getCreatedAt());
         snapshot.setCanceledAt(source.getCanceledAt());

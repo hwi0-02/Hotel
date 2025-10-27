@@ -89,6 +89,16 @@ public class Payment {
     @Column(name = "receipt_url", length = 512)
     private String receiptUrl;
 
+    // ===== 결제자 정보 =====
+    @Column(name = "email", length = 255)
+    private String email;
+
+    @Column(name = "customer_name", length = 100)
+    private String customerName;
+
+    @Column(name = "phone", length = 50)
+    private String phone;
+
     // ===== 상태/타임스탬프 =====
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
