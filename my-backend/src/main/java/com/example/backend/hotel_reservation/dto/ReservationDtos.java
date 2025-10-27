@@ -26,7 +26,7 @@ public class ReservationDtos {
         private String checkOut;      // 'YYYY-MM-DD'
         private Integer adults;       // optional
         private Integer children;     // optional
-        private Integer holdSeconds;  // optional, default 30
+    private Integer holdSeconds;  // optional, default 600
     }
 
     // 응답 DTO

@@ -90,7 +90,7 @@ public class ReservationService {
         locked.forEach(ri -> ri.setAvailableQuantity(ri.getAvailableQuantity() - qty));
         invRepo.saveAllAndFlush(locked);
 
-        int holdSec = Optional.ofNullable(req.getHoldSeconds()).orElse(30);
+    int holdSec = Optional.ofNullable(req.getHoldSeconds()).orElse(600);
         Instant now = Instant.now();
         Reservation r = Reservation.builder()
                 .userId(req.getUserId())

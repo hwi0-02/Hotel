@@ -7,7 +7,7 @@
       <div class="summary-left">
         <h2 class="avg">{{ overallAverage.toFixed(1) }}</h2>
         <p class="label">{{ overallLabel }}</p>
-        <p class="desc">이용후기 {{ reviews.length }}건 기준</p>
+        <p class="desc">이용후기 {{ reviewStats.count || reviews.length }}건 기준</p>
       </div>
 
       <div class="summary-right">
@@ -169,6 +169,7 @@ const hotelId = route.params.id
 const reservationId = route.query.reservationId
 
 const reviews = ref([])
+const reviewStats = ref({ average: 0, count: 0, details: {} })
 const newReview = ref('')
 const imageFiles = ref([])
 const imagePreview = ref([])
@@ -207,24 +208,24 @@ const ratingFields = ref({
   facilities: { label: '부대시설', value: 0, hover: 0 },
 })
 
-// ✅ 평균 계산 (전체 평균)
-const overallAverage = computed(() => {
-  if (!reviews.value.length) return 0
-  const total = reviews.value.reduce((sum, r) => sum + (r.rating || 0), 0)
-  return total / reviews.value.length
-})
+const KEY_MAP = {
+  '숙소 청결 상태': 'cleanliness',
+  '서비스': 'service',
+  '가격 대비 만족도': 'value',
+  '위치': 'location',
+  '부대시설': 'facilities',
+}
 
-// ✅ 세부 항목별 평균
-const detailAverage = computed(() => {
-  const keys = ['cleanliness', 'service', 'value', 'location', 'facilities']
-  const result = {}
-  keys.forEach(k => {
-    const vals = reviews.value.map(r => r[k]).filter(v => v != null)
-    result[k] = vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : 0
-  })
-  return result
-})
+const normalizeDetailKeys = (det = {}) => {
+  const out = {}
+  for (const [k, v] of Object.entries(det)) {
+    const key = KEY_MAP[k] || k
+    out[key] = Number(v) || 0
+  }
+  return out
+}
 
+const DETAIL_KEYS = ['cleanliness', 'service', 'value', 'location', 'facilities']
 const DETAIL_ORDER = ['service', 'facilities', 'value', 'cleanliness', 'location']
 const sortDetailEntries = (obj = {}) => {
   const arr = Object.entries(obj).map(([k, v]) => [k, Number(v) || 0])
@@ -238,7 +239,9 @@ const sortDetailEntries = (obj = {}) => {
     return b[1] - a[1]
   })
 }
-const orderedDetailList = computed(() => sortDetailEntries(detailAverage.value))
+const orderedDetailList = computed(() => sortDetailEntries(reviewStats.value.details || {}))
+
+const overallAverage = computed(() => Number(reviewStats.value.average || 0))
 
 // ✅ 리뷰 리스트 정렬
 const filteredReviews = computed(() => {
@@ -253,6 +256,67 @@ const sortedReviews = computed(() => {
     ? arr.sort((a, b) => b.rating - a.rating)
     : arr.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 })
+
+function deriveStatsFromReviews(list = []) {
+  if (!Array.isArray(list) || list.length === 0) {
+    return { average: 0, count: 0, details: Object.fromEntries(DETAIL_KEYS.map(k => [k, 0])) }
+  }
+
+  const detailTotals = Object.fromEntries(DETAIL_KEYS.map(k => [k, 0]))
+  const detailCounts = Object.fromEntries(DETAIL_KEYS.map(k => [k, 0]))
+
+  list.forEach(item => {
+    DETAIL_KEYS.forEach(key => {
+      const raw = Number(item?.[key])
+      if (Number.isFinite(raw) && raw >= 0) {
+        detailTotals[key] += raw
+        detailCounts[key] += 1
+      }
+    })
+  })
+
+  const detailAverages = Object.fromEntries(
+    DETAIL_KEYS.map(key => {
+      const count = detailCounts[key] || 0
+      const avg = count > 0 ? detailTotals[key] / count : 0
+      return [key, Math.round(avg * 10) / 10]
+    })
+  )
+
+  const sum = DETAIL_KEYS.reduce((acc, key) => acc + detailAverages[key], 0)
+  const avgTotal = DETAIL_KEYS.length > 0 ? sum / DETAIL_KEYS.length : 0
+
+  return {
+    average: Math.round(avgTotal * 10) / 10,
+    count: list.length,
+    details: detailAverages,
+  }
+}
+
+function formatStats(raw, fallbackList = reviews.value) {
+  if (!raw || typeof raw !== 'object') {
+    return deriveStatsFromReviews(fallbackList)
+  }
+
+  const subs = raw.subs || raw.summary || {}
+  const average = Number(raw.average ?? raw.score ?? 0) || 0
+  const count = Number(
+    raw.count ?? raw.reviewCount ?? raw.total ?? subs['리뷰수'] ?? subs.reviewCount ?? subs.count ?? (Array.isArray(fallbackList) ? fallbackList.length : 0)
+  ) || 0
+
+  const details = normalizeDetailKeys(raw.details || {})
+  DETAIL_KEYS.forEach(key => {
+    if (typeof details[key] === 'undefined') {
+      details[key] = 0
+    }
+  })
+
+  return {
+    average: Math.round(average * 10) / 10,
+    count,
+    details,
+  }
+}
 
 // ✅ 라벨 번역
 function translateLabel(key) {
@@ -273,7 +337,9 @@ const overallRating = computed(() => {
 
 async function fetchReviews() {
   const res = await http.get(`/reviews/hotels/${hotelId}`)
-  reviews.value = res.data.reviews || []
+  const list = res.data.reviews || []
+  reviews.value = list
+  reviewStats.value = formatStats(res.data?.stats, list)
 }
 
 function handleFileChange(e) {

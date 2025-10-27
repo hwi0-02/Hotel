@@ -25,7 +25,7 @@
 
       <div class="w-100 button-group">
         <div class="flex" style="gap: 16px;">
-          <a class="btn w-100" href="/checkout">다시 테스트하기</a>
+          <button class="btn w-100" type="button" @click="goHome">홈으로 가기</button>
         </div>
       </div>
     </div>
@@ -65,6 +65,9 @@ export default {
     await this.confirmPaymentSafely(); // 서버 DB 금액(또는 위에서 조회한 금액)으로 Toss Confirm
   },
   methods: {
+    goHome() {
+      this.$router.push("/");
+    },
     // 서버에 저장된 결제 금액을 조회 (표시 + confirm 바디용 숫자)
     async fetchAmountSafely() {
       try {

@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Locale;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -25,6 +26,8 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final LoginRepository loginRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    @Value("${mail.from:${spring.mail.username:}}")
+    private String mailFrom;
 
     private static final SecureRandom secureRandom = new SecureRandom();
     
@@ -123,8 +126,16 @@ public class EmailService {
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(content, true);
-        helper.setFrom("noreply@yourapp.com");
-        
+        String fromAddress = (mailFrom != null && !mailFrom.isBlank())
+                ? mailFrom
+                : mailSender instanceof org.springframework.mail.javamail.JavaMailSenderImpl
+                    ? ((org.springframework.mail.javamail.JavaMailSenderImpl) mailSender).getUsername()
+                    : null;
+        if (fromAddress == null || fromAddress.isBlank()) {
+            throw new IllegalStateException("발신 이메일 주소가 설정되지 않았습니다. mail.from 또는 spring.mail.username 값을 확인하세요.");
+        }
+        helper.setFrom(fromAddress);
+
         mailSender.send(message);
     }
     

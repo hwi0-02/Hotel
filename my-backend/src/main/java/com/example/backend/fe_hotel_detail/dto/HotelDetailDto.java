@@ -13,6 +13,7 @@ public class HotelDetailDto {
     public static class Rating {
         private double score;
         private Map<String, Double> subs;
+        private Map<String, Double> details;
 
         public Map<String, Double> getSubs() {
             return subs == null ? null : Map.copyOf(subs);
@@ -22,10 +23,19 @@ public class HotelDetailDto {
             this.subs = subs == null ? null : Map.copyOf(subs);
         }
 
+        public Map<String, Double> getDetails() {
+            return details == null ? null : Map.copyOf(details);
+        }
+
+        public void setDetails(Map<String, Double> details) {
+            this.details = details == null ? null : Map.copyOf(details);
+        }
+
         Rating copy() {
             return Rating.builder()
                     .score(score)
                     .subs(getSubs())
+                    .details(getDetails())
                     .build();
         }
     }

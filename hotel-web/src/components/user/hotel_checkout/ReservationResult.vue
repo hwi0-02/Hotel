@@ -236,6 +236,8 @@ const unitPrice = computed(() => {
 })
 
 // 프린트
+const goHome = () => router.push({ name: 'Home' })
+
 const printReceipt = () => window.print()
 </script>
 

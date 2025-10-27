@@ -200,6 +200,10 @@
     cursor: pointer;
     transition: background-color 0.2s;
 }
+
+.submit-btn.secondary {
+    margin-top: 10px;
+}
 .submit-btn:hover {
     background-color: #41b38f;
 }
@@ -417,15 +421,16 @@
 }
 
 .inquiry-card-item .item-title {
-  font-weight: 600;
-  font-size: 1rem;
-  margin-bottom: auto; /* 제목이 남은 공간을 차지하게 함 */
-  /* 여러 줄 말줄임 처리 (선택 사항) */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2; /* 2줄까지 표시 */
-  -webkit-box-orient: vertical;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: auto; /* 제목이 남은 공간을 차지하게 함 */
+    /* 여러 줄 말줄임 처리 (선택 사항) */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
 }
 
 .inquiry-card-item .item-date {

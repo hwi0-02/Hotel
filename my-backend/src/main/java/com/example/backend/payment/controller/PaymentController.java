@@ -168,7 +168,10 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("code", "RESERVATION_COMPLETED"));
         }
 
-        // 토스 결제 승인
+    // 결제자 이메일 확보 (예약/결제 사용자 ID 기반)
+    ensurePaymentUserAttached(pay, rv);
+
+    // 토스 결제 승인
         pay.setPaymentKey(paymentKey);
         String url = "https://api.tosspayments.com/v1/payments/confirm";
     String encryptedKey = "Basic " + Base64.getEncoder()
@@ -248,6 +251,28 @@ public class PaymentController {
                     "status", "COMPLETED"));
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("code", "TOSS_CONFIRM_FAILED"));
+    }
+
+    private void ensurePaymentUserAttached(Payment pay, Reservation rv) {
+        if (pay == null) {
+            return;
+        }
+
+        boolean hasUserEmail = pay.getUser() != null && pay.getUser().getEmail() != null;
+        if (hasUserEmail) {
+            return;
+        }
+
+        Long userId = pay.getUserId();
+        if (userId == null && rv != null) {
+            userId = rv.getUserId();
+        }
+
+        if (userId == null) {
+            return;
+        }
+
+        userRepository.findById(userId).ifPresent(pay::setUser);
     }
 
     @GetMapping("/lists")

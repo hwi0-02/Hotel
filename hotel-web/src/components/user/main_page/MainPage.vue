@@ -160,6 +160,7 @@
             width="400"
             height="160"
             sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
+            @error="onHotelImageError($event, hotel)"
           />
           <div class="hotel-info">
             <h3>{{ hotel.name }}</h3>
@@ -194,9 +195,43 @@ import { Navigation, Pagination } from "swiper/modules";
 import HotelApi from "@/api/HotelApi";
 import { getAuthUser } from "@/utils/auth-storage";
 import { resolveBackendUrl } from "@/api/http";
+import hotel1Image from "@/images/hotel1.png";
+import hotel2Image from "@/images/hotel2.png";
+import hotel3Image from "@/images/hotel3.png";
+import hotel4Image from "@/images/hotel4.png";
+import hotel5Image from "@/images/hotel5.png";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
+
+const PUBLIC_UPLOAD_BASE = "https://hwiyeong.shop";
+const LEGACY_MEDIA_HOSTS = new Set(["images.example.com", "localhost", "127.0.0.1"]);
+
+const normalizeUploadPath = (pathname) => {
+  if (!pathname) {
+    return "/uploads";
+  }
+
+  const idx = pathname.indexOf("/uploads");
+  if (idx >= 0) {
+    const slice = pathname.slice(idx);
+    return slice === "" ? "/uploads" : slice;
+  }
+
+  let normalized = pathname.startsWith("/") ? pathname : `/${pathname}`;
+
+  if (normalized === "/uploads" || normalized.startsWith("/uploads/")) {
+    return normalized;
+  }
+
+  return normalized === "/" ? "/uploads" : `/uploads${normalized}`;
+};
+
+const composePublicUploadUrl = (pathname, search = "") => {
+  const path = normalizeUploadPath(pathname);
+  const query = search && typeof search === "string" ? search : "";
+  return `${PUBLIC_UPLOAD_BASE}${path}${query}`;
+};
 
 export default {
   name: "MainPage",
@@ -237,7 +272,8 @@ export default {
       showDomesticSection: true,
       showOverseasSection: true,
       showHotelSection: false,
-      showTipsSection: false
+      showTipsSection: false,
+      defaultHotelImage: "/images/paradiseHotel.webp"
     };
   },
   mounted() {
@@ -269,7 +305,7 @@ export default {
           lowestPrice: this.normalizePrice(it?.lowestPrice ?? it?.hotelPrice),
           price: "요금 정보 없음",
           rating: it?.starRating ?? null,
-          image: this.resolveImage(it?.coverImage)
+          image: this.pickCoverImage(it, this.hotelThumb(it?.id))
         }));
         this.popularHotels.forEach(hotel => {
           if (typeof hotel.lowestPrice === "number") {
@@ -296,6 +332,8 @@ export default {
             hotel.lowestPrice = min;
             hotel.price = this.formatPrice(min);
           }
+          const detailHotel = detail?.hotel ?? detail;
+          hotel.image = this.pickCoverImage(detailHotel, this.hotelThumb(hotel.id));
         } catch (err) {
           console.debug("[MainPage] failed to load hotel detail for price", hotel.id, err?.message);
         }
@@ -308,13 +346,226 @@ export default {
     formatPrice(value) {
       return `₩${Number(value).toLocaleString()} / 1박`;
     },
-    resolveImage(url) {
-      if (!url) return "/images/paradiseHotel.webp";
-      if (/^https?:\/\//i.test(url)) return url;
-      const normalized = url.startsWith("/uploads/")
-        ? url
-        : `/uploads/${url.replace(/^\/+/, "")}`;
+    pickCoverImage(source, fallbackOverride) {
+      const fallback = fallbackOverride ?? this.defaultHotelImage;
+
+      const candidates = [];
+      const pushCandidates = (value) => {
+        const extracted = this.extractImageCandidates(value);
+        if (extracted.length) {
+          candidates.push(...extracted);
+        }
+      };
+
+      if (typeof source === "string") {
+        pushCandidates(source);
+      } else if (Array.isArray(source)) {
+        source.forEach(pushCandidates);
+      } else if (source && typeof source === "object") {
+        const primaryKeys = [
+          "coverImage",
+          "cover",
+          "coverImageUrl",
+          "mainImage",
+          "mainImageUrl",
+          "thumbnail",
+          "thumbnailUrl",
+          "previewImage",
+          "image",
+          "imageUrl",
+          "primaryImage",
+        ];
+        primaryKeys.forEach(k => {
+          if (k in source) pushCandidates(source[k]);
+        });
+
+        const collectionKeys = [
+          "imageUrls",
+          "images",
+          "hotelImages",
+          "photos",
+          "gallery",
+          "media",
+          "thumbnails",
+          "assets",
+          "coverImages",
+        ];
+        collectionKeys.forEach(k => {
+          if (k in source) pushCandidates(source[k]);
+        });
+      }
+
+      if (!candidates.length) {
+        return fallback;
+      }
+
+      for (const candidate of candidates) {
+        const absolute = this.ensureAbsoluteImage(candidate, fallback);
+        if (absolute) {
+          return absolute;
+        }
+      }
+
+      return fallback;
+    },
+    hotelThumb(id) {
+      const map = {
+        1: hotel1Image,
+        2: hotel2Image,
+        3: hotel3Image,
+        4: hotel4Image,
+        5: hotel5Image
+      };
+      const key = Number(id);
+      if (map[key]) {
+        return map[key];
+      }
+      if (Number.isFinite(key) && key > 0) {
+        return `https://picsum.photos/seed/hotel${key}/400/300`;
+      }
+      return this.defaultHotelImage;
+    },
+    ensureAbsoluteImage(url, fallback = this.defaultHotelImage) {
+      const normalizeFallback = () => (
+        fallback !== undefined ? fallback : this.defaultHotelImage
+      );
+
+      if (url == null) {
+        return normalizeFallback();
+      }
+
+      if (typeof url === "object") {
+        const nested = url.url ?? url.imageUrl ?? url.src ?? url.path ?? url.fileUrl;
+        if (nested != null) {
+          return this.ensureAbsoluteImage(nested, fallback);
+        }
+        return normalizeFallback();
+      }
+
+      let raw = String(url).trim();
+      if (!raw) return normalizeFallback();
+
+      const stripQuotes = (value) => value.replace(/^['"]|['"]$/g, "");
+      raw = stripQuotes(raw);
+
+      const looksJson = (value) =>
+        (value.startsWith("[") && value.endsWith("]")) ||
+        (value.startsWith("{") && value.endsWith("}"));
+
+      if (looksJson(raw)) {
+        try {
+          const parsed = JSON.parse(raw);
+          const viaParsed = this.ensureAbsoluteImage(parsed, fallback);
+          if (viaParsed) {
+            return viaParsed;
+          }
+        } catch (_) {
+          // ignore malformed JSON
+        }
+        const firstSegment = raw.replace(/^\[|\]$/g, "").split(",")[0] ?? "";
+        raw = stripQuotes(firstSegment.trim());
+      }
+
+      if (!raw) {
+        return normalizeFallback();
+      }
+
+      if (/^https?:\/\//i.test(raw)) {
+        try {
+          const parsed = new URL(raw);
+          const host = parsed.hostname?.toLowerCase?.();
+
+          if (host && LEGACY_MEDIA_HOSTS.has(host)) {
+            return composePublicUploadUrl(parsed.pathname, parsed.search);
+          }
+
+          if (host === "hwiyeong.shop" && parsed.protocol === "http:") {
+            return `https://${parsed.host}${parsed.pathname || ""}${parsed.search || ""}`;
+          }
+
+          return raw;
+        } catch (_) {
+          // fall through to relative handling
+        }
+      }
+
+      if (raw.startsWith("//")) {
+        return `https:${raw}`;
+      }
+
+      const stripLeading = (value) => value.replace(/^\.?\/+/, "");
+      const cleaned = stripLeading(raw);
+
+      if (cleaned.startsWith("//")) {
+        return `https:${cleaned}`;
+      }
+
+      let normalized = cleaned;
+      if (cleaned.startsWith("uploads/")) {
+        normalized = `/${cleaned}`;
+      } else if (!cleaned.startsWith("/")) {
+        normalized = `/${cleaned}`;
+      }
+
       return resolveBackendUrl(normalized);
+    },
+    extractImageCandidates(value) {
+      if (value == null) return [];
+
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (!trimmed) return [];
+
+        const deQuoted = trimmed.replace(/^['"]|['"]$/g, "");
+
+        const looksJson = (str) =>
+          (str.startsWith("[") && str.endsWith("]")) ||
+          (str.startsWith("{") && str.endsWith("}"));
+
+        if (looksJson(deQuoted)) {
+          try {
+            const parsed = JSON.parse(deQuoted);
+            return this.extractImageCandidates(parsed);
+          } catch (_) {
+            // ignore malformed JSON
+          }
+        }
+
+        if (deQuoted.includes(",")) {
+          return deQuoted.split(",").map(part => part.trim()).filter(Boolean);
+        }
+
+        return [deQuoted];
+      }
+
+      if (Array.isArray(value)) {
+        return value.flatMap(item => this.extractImageCandidates(item));
+      }
+
+      if (typeof value === "object") {
+        const preferredKeys = ["url", "imageUrl", "src", "path", "fileUrl", "value", "cover"];
+        for (const key of preferredKeys) {
+          if (key in value && value[key] != null) {
+            return this.extractImageCandidates(value[key]);
+          }
+        }
+      }
+
+      return [];
+    },
+    resolveImage(url, fallback = this.defaultHotelImage) {
+      return this.ensureAbsoluteImage(url, fallback);
+    },
+    onHotelImageError(evt, hotel) {
+      const fallback = hotel ? this.hotelThumb(hotel.id) : this.defaultHotelImage;
+      const target = evt?.target;
+      if (target && target.getAttribute("data-fallback") !== "true") {
+        target.setAttribute("data-fallback", "true");
+        target.src = fallback;
+      }
+      if (hotel) {
+        hotel.image = fallback;
+      }
     },
     goHotelDetail(id) {
       if (id) this.$router.push({ name: "HotelDetail", params: { id } });

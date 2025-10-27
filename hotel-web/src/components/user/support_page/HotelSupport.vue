@@ -46,7 +46,7 @@
             <button class="submit-btn" @click="openInquiryModal()">
               1:1 {{ categoryTitle }} 문의하기
             </button>
-            <button class="submit-btn" @click="openMyInquiriesModal"> 
+            <button class="submit-btn secondary" @click="openMyInquiriesModal"> 
               나의 문의 내역
             </button>
           </div>

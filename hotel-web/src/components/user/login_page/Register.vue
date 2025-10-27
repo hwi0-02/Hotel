@@ -86,13 +86,13 @@
         <div class="divider">---------------------------------------- 또는 ---------------------------------------</div>
 
         <div class="social-login">
-          <div class="social-box">
+          <div class="social-box" @click="naverLogin">
             <img src="/naverLogo.png" alt="네이버 로그인" />
           </div>
-          <div class="social-box">
+          <div class="social-box" @click="googleLogin">
             <img src="/googleLogo.png" alt="구글 로그인" />
           </div>
-          <div class="social-box">
+          <div class="social-box" @click="kakaoLogin">
             <img src="/kakaoLogo.png" alt="카카오 로그인" />
           </div>
         </div>
@@ -275,7 +275,7 @@
 <style scoped src="@/assets/css/login/register.css"></style>
 
 <script>
-import http from "@/api/http";
+import http, { resolveBackendUrl } from "@/api/http";
 
 export default {
   name: "RegisterPage",
@@ -508,6 +508,19 @@ export default {
         script.defer = true;
         document.head.appendChild(script);
       }
+    },
+    redirectToOAuth(provider) {
+      const target = resolveBackendUrl(`/api/oauth2/authorization/${provider}`);
+      window.location.href = target;
+    },
+    naverLogin() {
+      this.redirectToOAuth("naver");
+    },
+    googleLogin() {
+      this.redirectToOAuth("google");
+    },
+    kakaoLogin() {
+      this.redirectToOAuth("kakao");
     },
   },
 };

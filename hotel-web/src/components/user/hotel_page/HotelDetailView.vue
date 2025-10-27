@@ -24,7 +24,7 @@ const reserving = ref(false)
 /* =========================
  * 평점/라벨/색상 유틸
  * ========================= */
-const rating = ref({ score: 0, subs: { 리뷰수: 0 }, details: {} })
+const rating = ref({ score: 0, subs: { 리뷰수: 0 }, details: fillDetailDefaults() })
 
 const displayScore = computed(() => {
   const s = Number(rating.value.score || 0)
@@ -80,6 +80,20 @@ function normalizeDetailKeys(det = {}) {
   }
   return out
 }
+function fillDetailDefaults(det = {}) {
+  const base = {
+    cleanliness: 0,
+    service: 0,
+    value: 0,
+    location: 0,
+    facilities: 0,
+  }
+  for (const key of Object.keys(base)) {
+    const num = Number(det[key])
+    base[key] = Number.isFinite(num) ? num : 0
+  }
+  return base
+}
 const sortDetailEntries = (obj = {}) => {
   const arr = Object.entries(obj).map(([k, v]) => [k, Number(v) || 0])
   return arr.sort((a, b) => {
@@ -93,6 +107,92 @@ const sortDetailEntries = (obj = {}) => {
   })
 }
 const detailsForView = computed(() => sortDetailEntries(normalizeDetailKeys(rating.value?.details || {})))
+
+const ratingStorageKey = (hid) => `hotelRating_${hid}`
+
+const canUseCookies = () => typeof document !== 'undefined'
+
+function setCookie(name, value, days = 1) {
+  if (!canUseCookies()) return
+  const expires = (() => {
+    if (!Number.isFinite(days)) return ''
+    const date = new Date()
+    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000)
+    return `; expires=${date.toUTCString()}`
+  })()
+  document.cookie = `${name}=${encodeURIComponent(value)}${expires}; path=/; SameSite=Lax`
+}
+
+function getCookie(name) {
+  if (!canUseCookies()) return null
+  const cookies = document.cookie ? document.cookie.split('; ') : []
+  for (const entry of cookies) {
+    const [key, ...rest] = entry.split('=')
+    if (key === name) {
+      return decodeURIComponent(rest.join('='))
+    }
+  }
+  return null
+}
+
+const hasRatingData = () => {
+  const score = Number(rating.value?.score || 0)
+  const count = Number(rating.value?.subs?.리뷰수 || 0)
+  return score > 0 || count > 0
+}
+
+const sanitizeRatingPayload = (raw) => {
+  if (!raw || typeof raw !== 'object') return null
+
+  const subs = raw.subs || raw.summary || {}
+  const countCandidate = subs['리뷰수'] ?? subs.reviewCount ?? subs.count ?? raw.count
+  const count = Number(countCandidate)
+  const score = Number(raw.score ?? raw.average ?? raw.avg ?? 0)
+
+  const normalizedDetails = normalizeDetailKeys(raw.details || {})
+  const details = fillDetailDefaults(normalizedDetails)
+
+  return {
+    score: Number.isFinite(score) ? Math.round(score * 10) / 10 : 0,
+    subs: { 리뷰수: Number.isFinite(count) ? count : 0 },
+    details
+  }
+}
+
+const cacheRatingPayload = (hid, payload) => {
+  if (!hid || !payload) return
+  try {
+    const serialized = JSON.stringify({
+      average: payload.score ?? 0,
+      count: payload.subs?.리뷰수 ?? 0,
+      details: payload.details ?? {}
+    })
+    setCookie(ratingStorageKey(hid), serialized, 3)
+  } catch (_) {
+    /* ignore cookie errors */
+  }
+}
+
+const applyRatingPayload = (raw, { cache = false, force = false } = {}) => {
+  const sanitized = sanitizeRatingPayload(raw)
+  if (!sanitized) return false
+
+  if (!force && hasRatingData()) {
+    const incomingCount = Number(sanitized.subs?.리뷰수 ?? 0)
+    const incomingScore = Number(sanitized.score ?? 0)
+    if (incomingCount === 0 && incomingScore === 0) {
+      return false
+    }
+  }
+
+  rating.value = sanitized
+  hotel.value = hotel.value ? { ...hotel.value, rating: sanitized } : { rating: sanitized }
+
+  if (cache) {
+    cacheRatingPayload(route.params.id, sanitized)
+  }
+  return true
+}
 
 /* =========================
  * 기타 상태/유틸
@@ -159,7 +259,8 @@ const toAbs = (u) => {
 
 onMounted(async () => {
   try {
-    const data = await HotelApi.getDetail(route.params.id)
+    const hid = route.params.id
+    const data = await HotelApi.getDetail(hid)
     const h = data?.hotel ?? data ?? null
     const images = Array.isArray(h?.images) ? h.images.map(toAbs) : []
     const cover = toAbs(h?.coverImage || h?.cover || images[0] || '')
@@ -168,6 +269,7 @@ onMounted(async () => {
       images,
       coverImage: cover || null
     }
+    applyRatingPayload(h?.rating, { cache: true })
 
     const ciYmd = checkInStr.value || null
     const coYmd = checkOutStr.value || null
@@ -233,17 +335,15 @@ onMounted(async () => {
     await loadWishState()
 
     // ✅ 캐시된 평점 즉시 반영 (정규화 포함)
-    const cached = localStorage.getItem(`hotelRating_${route.params.id}`)
-    if (cached) {
+    const cached = getCookie(ratingStorageKey(hid))
+    if (cached && !hasRatingData()) {
       try {
         const parsed = JSON.parse(cached)
-        rating.value = {
-          score: Number(parsed.average) || 0,
-          subs: { 리뷰수: Number(parsed.count) || 0 },
-          details: normalizeDetailKeys(parsed.details || {})
-        }
-        hotel.value.rating = rating.value
-        console.log('⭐ localStorage 캐시 평점 적용됨:', parsed)
+        applyRatingPayload({
+          score: parsed.average,
+          subs: { 리뷰수: parsed.count },
+          details: parsed.details
+        })
       } catch (_) {}
     }
 
@@ -289,7 +389,7 @@ async function reserve(room) {
       checkOut: co,
       adults: adultsUrl.value || 1,
       children: childrenUrl.value || 0,
-      holdSeconds: 60
+  holdSeconds: 600
     }
     const res = await ReservationApi.hold(payload)
 
@@ -360,24 +460,10 @@ async function refreshHotelRating() {
     const hid = route.params.id
     const { data } = await http.get(`reviews/hotels/${hid}/stats`)
     if (data && typeof data.average !== 'undefined') {
-      const avg = Number(data.average)
-      const det = normalizeDetailKeys(data.details || {}) // ← 정규화
-
-      rating.value = {
-        score: avg,
-        subs: { 리뷰수: data.count },
-        details: det
-      }
-      hotel.value.rating = rating.value
-
-      // ✅ localStorage 캐시 저장 (정규화된 details)
-      localStorage.setItem(`hotelRating_${hid}`, JSON.stringify({
-        average: avg,
-        count: data.count,
-        details: det
-      }))
-
-      console.log('⭐ 최신 평점 갱신 완료:', avg, det)
+      applyRatingPayload(
+        { score: data.average, subs: { 리뷰수: data.count }, details: data.details },
+        { cache: true, force: true }
+      )
     }
   } catch (e) {
     console.error('평점 갱신 실패', e)

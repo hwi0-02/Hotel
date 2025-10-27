@@ -230,12 +230,6 @@ export default {
       }
       notifyAuthChanged();
 
-      if (provider) {
-        const name = providerDisplayMap[provider] || provider;
-        if (userInfo?.name) {
-          alert(`${userInfo.name}님, ${name} 로그인 성공!`);
-        }
-      }
 
       const role = userInfo?.role;
       if (role === 'ADMIN') {

@@ -10,19 +10,25 @@ import com.example.backend.HotelOwner.repository.HotelImageRepository;
 import com.example.backend.HotelOwner.repository.HotelRepository;
 import com.example.backend.HotelOwner.repository.RoomRepository;
 import com.example.backend.fe_hotel_detail.dto.HotelDetailDto;
+import com.example.backend.review.service.UserReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
 import java.util.*;
 
 @Service("feHotelDetailService")
 @RequiredArgsConstructor
 public class FeHotelDetailService {
 
+    private static final String PUBLIC_UPLOAD_BASE = "https://hwiyeong.shop";
+    private static final Set<String> LEGACY_MEDIA_HOSTS = Set.of("localhost", "127.0.0.1", "images.example.com");
+
     private final HotelRepository hotelRepository;
     private final HotelImageRepository hotelImageRepository;
     private final RoomRepository roomRepository;
     private final HotelAmenityRepository hotelAmenityRepository;
+    private final UserReviewService userReviewService;
 
     public HotelDetailDto getHotelDetail(Long id) {
         Hotel h = hotelRepository.findById(id)
@@ -30,7 +36,11 @@ public class FeHotelDetailService {
 
         // 호텔 이미지
         List<String> hotelImages = hotelImageRepository.findByHotel_IdOrderBySortNoAsc(id)
-            .stream().map(HotelImage::getUrl).toList();
+            .stream()
+            .map(HotelImage::getUrl)
+            .map(this::normalizeMediaUrl)
+            .filter(Objects::nonNull)
+            .toList();
 
         // 객실: LEFT JOIN FETCH로 모두 가져오되(이미지 없어도 포함), 혹시 모를 중복을 id기준 Dedup
         List<Room> fetched = roomRepository.findByHotelIdWithImages(id);
@@ -57,7 +67,7 @@ public class FeHotelDetailService {
             .description(h.getDescription())
             .images(hotelImages)
             .badges(List.of())
-            .rating(new HotelDetailDto.Rating(0.0, Map.of()))
+            .rating(buildRating(h.getId()))
             .amenities(new HotelDetailDto.Amenities(left, right))
             .notice(null)
             .build();
@@ -66,7 +76,11 @@ public class FeHotelDetailService {
         List<HotelDetailDto.RoomDto> roomDtos = new ArrayList<>();
         for (Room r : roomEntities) {
             List<String> photos = (r.getImages() == null) ? List.of()
-                : r.getImages().stream().map(RoomImage::getUrl).toList();
+                : r.getImages().stream()
+                    .map(RoomImage::getUrl)
+                    .map(this::normalizeMediaUrl)
+                    .filter(Objects::nonNull)
+                    .toList();
 
             roomDtos.add(HotelDetailDto.RoomDto.builder()
                 .id(r.getId())
@@ -116,5 +130,135 @@ public class FeHotelDetailService {
     private String safeRoomName(Room r) {
         if (r.getName() != null && !r.getName().isBlank()) return r.getName();
         return (r.getRoomType() != null) ? r.getRoomType().name() : "객실";
+    }
+
+    private String normalizeMediaUrl(String raw) {
+        if (raw == null) {
+            return null;
+        }
+
+        String value = raw.trim();
+        if (value.isEmpty()) {
+            return null;
+        }
+
+        try {
+            URI uri = URI.create(value);
+            String host = uri.getHost();
+            String path = uri.getPath();
+
+            if (host == null) {
+                return resolveRelative(path != null ? path : value);
+            }
+
+            String normalizedHost = host.toLowerCase(Locale.ROOT);
+            if (normalizedHost.equals("hwiyeong.shop")) {
+                if (path != null && path.startsWith("/uploads")) {
+                    return composePublicUrl(path);
+                }
+                if ("http".equalsIgnoreCase(uri.getScheme())) {
+                    return value.replaceFirst("^http://", "https://");
+                }
+                return value;
+            }
+
+            if (LEGACY_MEDIA_HOSTS.contains(normalizedHost)) {
+                return composePublicUrl(path);
+            }
+
+            return value;
+        } catch (IllegalArgumentException ex) {
+            return resolveRelative(value);
+        }
+    }
+
+    private String resolveRelative(String path) {
+        if (path == null || path.isBlank()) {
+            return PUBLIC_UPLOAD_BASE + "/uploads";
+        }
+        if (path.startsWith("/uploads") || path.startsWith("uploads")) {
+            return PUBLIC_UPLOAD_BASE + ensureUploadsPrefix(path);
+        }
+        String normalised = path.startsWith("/") ? path : "/" + path;
+        return PUBLIC_UPLOAD_BASE + normalised;
+    }
+
+    private String composePublicUrl(String path) {
+        if (path == null || path.isBlank()) {
+            return PUBLIC_UPLOAD_BASE + "/uploads";
+        }
+        return PUBLIC_UPLOAD_BASE + ensureUploadsPrefix(path);
+    }
+
+    private String ensureUploadsPrefix(String path) {
+        String normalized = path.startsWith("/") ? path : "/" + path;
+
+        if (normalized.equals("/uploads") || normalized.startsWith("/uploads/")) {
+            return normalized;
+        }
+
+        if (normalized.startsWith("/uploads")) {
+            String remainder = normalized.substring("/uploads".length());
+            if (remainder.startsWith("/")) {
+                return "/uploads" + remainder;
+            }
+            return "/uploads/" + remainder;
+        }
+
+        return "/uploads" + normalized;
+    }
+
+    private HotelDetailDto.Rating buildRating(Long hotelId) {
+        if (hotelId == null) {
+            return new HotelDetailDto.Rating(0.0, Map.of("리뷰수", 0.0), Map.of());
+        }
+
+        Map<String, Object> stats = userReviewService.getHotelReviewStats(hotelId);
+        if (stats == null || stats.isEmpty()) {
+            return new HotelDetailDto.Rating(0.0, Map.of("리뷰수", 0.0), Map.of());
+        }
+
+        double avg = toDouble(stats.get("average"));
+        double count = toDouble(stats.get("count"));
+        Map<String, Double> details = toDoubleMap(stats.get("details"));
+
+        Map<String, Double> subs = Map.of("리뷰수", count);
+        return HotelDetailDto.Rating.builder()
+            .score(avg)
+            .subs(subs)
+            .details(details)
+            .build();
+    }
+
+    private double toDouble(Object value) {
+        if (value instanceof Number number) {
+            return number.doubleValue();
+        }
+        if (value instanceof String s) {
+            try {
+                return Double.parseDouble(s);
+            } catch (NumberFormatException ignored) {
+                return 0.0;
+            }
+        }
+        return 0.0;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Double> toDoubleMap(Object raw) {
+        if (raw instanceof Map<?, ?> map) {
+            Map<String, Double> result = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                Object keyObj = entry.getKey();
+                if (keyObj == null) {
+                    continue;
+                }
+                String key = String.valueOf(keyObj);
+                double value = toDouble(entry.getValue());
+                result.put(key, value);
+            }
+            return result;
+        }
+        return Map.of();
     }
 }

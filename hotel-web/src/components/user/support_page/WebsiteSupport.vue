@@ -43,12 +43,13 @@
           </div>
 
           <div class="inquiry-action-area">
-              <button class="submit-btn" @click="openInquiryModal('website')">
-                1:1 문의하기
-              </button>
-              <button class="submit-btn" @click="openMyInquiriesModal"> 나의 문의 내역
-              </button>
-            </div>
+            <button class="submit-btn" @click="openInquiryModal('website')">
+              1:1 문의하기
+            </button>
+            <button class="submit-btn secondary" @click="openMyInquiriesModal">
+              나의 문의 내역
+            </button>
+          </div>
             </section>
           </div>
         </main>

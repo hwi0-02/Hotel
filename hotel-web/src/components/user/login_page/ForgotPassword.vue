@@ -14,21 +14,6 @@
 
         <div v-if="message" :class="messageClass">{{ message }}</div>
 
-        <!-- 구분선 -->
-        <div class="divider">------------------------------------ 또는 ------------------------------------</div>
-
-        <!-- 소셜 로그인 -->
-        <div class="social-login">
-          <div class="social-box">
-            <img src="/naverLogo.png" alt="네이버 로그인" />
-          </div>
-          <div class="social-box">
-            <img src="/googleLogo.png" alt="구글 로그인" />
-          </div>
-          <div class="social-box">
-            <img src="/kakaoLogo.png" alt="카카오 로그인" />
-          </div>
-        </div>
       </div>
 
       <!-- 오른쪽 : 로고 -->

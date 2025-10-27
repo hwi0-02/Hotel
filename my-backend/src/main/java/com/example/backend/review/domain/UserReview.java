@@ -44,19 +44,19 @@ public class UserReview {
 
     // ✅ 항목별 세부 평점
     @Column(name = "cleanliness")
-    private double cleanliness;  // 숙소 청결 상태
+    private Double cleanliness;  // 숙소 청결 상태
 
     @Column(name = "service")
-    private double service;      // 서비스
+    private Double service;      // 서비스
 
     @Column(name = "value_for_money")
-    private double value;        // 가격 대비 만족도
+    private Double value;        // 가격 대비 만족도
 
     @Column(name = "location")
-    private double location;     // 위치
+    private Double location;     // 위치
 
     @Column(name = "facilities")
-    private double facilities;   // 부대시설
+    private Double facilities;   // 부대시설
 
     // ✅ 리뷰 내용
     @Column(columnDefinition = "LONGTEXT")

@@ -658,7 +658,8 @@ public class LoginController {
 
     // 비밀번호 재설정 - 이메일 인증코드 발송
     @PostMapping("/password/reset/send-code")
-    public ResponseEntity<?> sendPasswordResetCode(@RequestParam String email) {
+    public ResponseEntity<?> sendPasswordResetCode(@RequestBody Map<String, String> request) {
+        String email = request != null ? request.get("email") : null;
         log.info("Password reset code request for email: {}", email);
         
         try {
@@ -722,10 +723,10 @@ public class LoginController {
 
     // 비밀번호 재설정 - 인증코드 검증 및 비밀번호 변경
     @PostMapping("/password/reset/verify-and-change")
-    public ResponseEntity<?> verifyCodeAndChangePassword(
-            @RequestParam String email,
-            @RequestParam String verificationCode,
-            @RequestParam String newPassword) {
+    public ResponseEntity<?> verifyCodeAndChangePassword(@RequestBody Map<String, String> request) {
+        String email = request != null ? request.get("email") : null;
+        String verificationCode = request != null ? request.get("verificationCode") : null;
+        String newPassword = request != null ? request.get("newPassword") : null;
         
         log.info("Password reset verification for email: {}", email);
         

@@ -34,9 +34,6 @@ export default {
 
         const displayProvider = currentProvider || userInfo?.provider;
         const providerName = providerNames[displayProvider] || displayProvider || "소셜";
-        if (userInfo?.name) {
-          alert(`${userInfo.name}님, ${providerName} 로그인 성공!`);
-        }
 
         notifyAuthChanged();
         this.$router.push(userInfo?.role === 'ADMIN' ? '/admin' : '/');

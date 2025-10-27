@@ -5,8 +5,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -219,30 +222,27 @@ public UserReviewResponseDto updateReview(
 
     @Transactional(readOnly = true)
     public Map<String, Object> getHotelReviewStats(Long hotelId) {
-        List<UserReview> list = reviewRepository.findByHotelId(hotelId);
-    
+        List<UserReview> list = reviewRepository.findByHotelId(hotelId)
+            .stream()
+            .filter(r -> !r.isHidden())
+            .toList();
+
         if (list.isEmpty()) {
             return Map.of(
                 "average", 0.0,
                 "count", 0,
-                "details", Map.of(
-                    "숙소 청결 상태", 0.0,
-                    "서비스", 0.0,
-                    "가격 대비 만족도", 0.0,
-                    "위치", 0.0,
-                    "부대시설", 0.0
-                )
+                "details", defaultDetails()
             );
         }
-    
-        double avgCleanliness = list.stream().mapToDouble(UserReview::getCleanliness).average().orElse(0.0);
-        double avgService     = list.stream().mapToDouble(UserReview::getService).average().orElse(0.0);
-        double avgValue       = list.stream().mapToDouble(UserReview::getValue).average().orElse(0.0);
-        double avgLocation    = list.stream().mapToDouble(UserReview::getLocation).average().orElse(0.0);
-        double avgFacilities  = list.stream().mapToDouble(UserReview::getFacilities).average().orElse(0.0);
-    
+
+        double avgCleanliness = averageScore(list, UserReview::getCleanliness);
+        double avgService     = averageScore(list, UserReview::getService);
+        double avgValue       = averageScore(list, UserReview::getValue);
+        double avgLocation    = averageScore(list, UserReview::getLocation);
+        double avgFacilities  = averageScore(list, UserReview::getFacilities);
+
         double avg = (avgCleanliness + avgService + avgValue + avgLocation + avgFacilities) / 5.0;
-    
+
         // ✅ 반올림 고정 (소수점 1자리)
         avg            = Math.round(avg * 10) / 10.0;
         avgCleanliness = Math.round(avgCleanliness * 10) / 10.0;
@@ -250,21 +250,30 @@ public UserReviewResponseDto updateReview(
         avgValue       = Math.round(avgValue * 10) / 10.0;
         avgLocation    = Math.round(avgLocation * 10) / 10.0;
         avgFacilities  = Math.round(avgFacilities * 10) / 10.0;
-    
-        // ✅ details 객체로 구성
-        Map<String, Object> details = new HashMap<>();
+
+        Map<String, Object> details = new LinkedHashMap<>();
         details.put("숙소 청결 상태", avgCleanliness);
         details.put("서비스", avgService);
         details.put("가격 대비 만족도", avgValue);
         details.put("위치", avgLocation);
         details.put("부대시설", avgFacilities);
-    
-        Map<String, Object> result = new HashMap<>();
+
+        Map<String, Object> result = new LinkedHashMap<>();
         result.put("average", avg);
         result.put("count", list.size());
         result.put("details", details);
-    
+
         return result;
+    }
+
+    private Map<String, Object> defaultDetails() {
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("숙소 청결 상태", 0.0);
+        details.put("서비스", 0.0);
+        details.put("가격 대비 만족도", 0.0);
+        details.put("위치", 0.0);
+        details.put("부대시설", 0.0);
+        return details;
     }
     
     /* ✅ 이미지 저장 */
@@ -332,13 +341,26 @@ public UserReviewResponseDto updateReview(
             .rating(review.getRating())
             .content(review.getContent())
             .images(imageList)
-            .cleanliness(review.getCleanliness())
-            .service(review.getService())
-            .value(review.getValue())
-            .location(review.getLocation())
-            .facilities(review.getFacilities())
+            .cleanliness(safeScore(review.getCleanliness()))
+            .service(safeScore(review.getService()))
+            .value(safeScore(review.getValue()))
+            .location(safeScore(review.getLocation()))
+            .facilities(safeScore(review.getFacilities()))
             .createdAt(review.getCreatedAt())
             .adminReply(review.getAdminReply())
             .build();
 }
+
+    private double averageScore(List<UserReview> reviews, Function<UserReview, Double> extractor) {
+        return reviews.stream()
+                .map(extractor)
+                .filter(Objects::nonNull)
+                .mapToDouble(Double::doubleValue)
+                .average()
+                .orElse(0.0);
+    }
+
+    private double safeScore(Double value) {
+        return value == null ? 0.0 : value;
+    }
 }

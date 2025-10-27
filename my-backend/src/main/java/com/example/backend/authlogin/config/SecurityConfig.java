@@ -105,6 +105,9 @@ public class SecurityConfig {
                 // ✅ 호텔 목록/상세 공개 (프론트 호환 위해 유지)
                 .requestMatchers(HttpMethod.GET, "/api/hotels", "/api/hotels/**").permitAll()
 
+                // ✅ 호텔 리뷰 통계 공개
+                .requestMatchers(HttpMethod.GET, "/api/reviews/hotels/*/stats").permitAll()
+
                 // 그 외는 인증 필요
                 .anyRequest().authenticated()
             )
